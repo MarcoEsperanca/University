@@ -1,0 +1,596 @@
+---
+output:
+  prettydoc::html_pretty:
+    df_print: paged
+    theme: hpstr
+    highlight: github
+    math: katex
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<center>
+
+![](ISCTE.jpeg)
+
+</center>
+
+<center>
+
+<H5 style="color: black;">
+
+Análise Exploratória de Dados
+
+</H5>
+
+</center>
+
+<center>
+
+<h1>
+
+Saúde Psicológica e Bem-estar
+
+<h1>
+
+</center>
+
+<center>
+
+![](saude_bem_estar.jpeg)
+
+</center>
+
+<H6 style="text-align: right;">
+
+**Grupo 9**
+
+</H6>
+
+<H6 style="text-align: right;">
+
+Camila Tavares de Sousa, nº 111017, CDA1
+
+</H6>
+
+<H6 style="text-align: right;">
+
+Carolina Vitória Prior dos Santos Brunheta, nº 110888, CDA1
+
+</H6>
+
+<H6 style="text-align: right;">
+
+Marco Delgado Esperança, nº 110451, CDB1
+
+</H6>
+
+<H6 style="text-align: right;">
+
+Miguel Duarte Aguilar das Neves Correia, nº 110786, CDA1
+
+</H6>
+
+ 
+
+<H6 style="text-align: right;">
+
+2 de abril de 2023
+
+</H6>
+
+ 
+
+ 
+
+------------------------------------------------------------------------
+
+### Índice
+
+**1. Sumário executivo**
+
+**2. Introdução**
+
+**3. Análise de resultados**
+
+**4. Conclusão**
+
+ 
+
+------------------------------------------------------------------------
+
+<H3 style="text-align: justify;">
+
+1. Sumário executivo
+
+</H3>
+
+<div style="text-align: justify">
+
+O estudo "Saúde Psicológica e Bem-estar" foi promovido pelo Ministério da Educação em 2022, com o objetivo de diagnosticar e compreender a saúde psicológica e bem-estar de crianças e adolescentes em idade escolar (do pré-escolar ao 12.º ano) em diferentes regiões de Portugal, após o período de pandemia Covid-19. Os dados disponibilizados referem-se a um excerto das suas respostas (ou dos seus educadores) ao questionário aplicado, nomeadamente, alunos do 1º ciclo da região de Algarve. O questionário incide sobre algumas das perguntas enquadradas nos objetivos definidos e alguma informação de caracterização das crianças.<br> Esta análise tem como objetivo avaliar a perceção dos alunos em relação à sua saúde psicológica e bem-estar, bem como identificar possíveis diferenças nas respostas entre as diferentes regiões de Portugal. 
+
+</div>
+
+<div style="text-align: justify">
+
+A degradação da saúde mental e bem-estar dos alunos é uma preocupação elevada, e aqueles que manifestam maior preocupação estão mais inclinados a apoiar iniciativas que promovam a melhoria da saúde psicológica e bem-estar, como a disponibilidade de recursos de apoio emocional ou programas de promoção da resiliência.
+
+</div>
+
+<H3 style="text-align: left;">
+
+<br> <br>
+
+2. Introdução
+
+</H3>
+
+<div style="text-align: justify">
+
+A preocupação com a saúde psicológica e bem-estar dos indivíduos é importante, por isso, o estudo e compreensão desta área é crucial para acompanhar a atual situação da saúde mental e bem-estar da população. A saúde psicológica e bem-estar abrangem diversos aspetos, tais como emoções, comportamentos e relações sociais. 
+
+</div>
+
+<div style="text-align: justify">
+
+Foi realizado um estudo por questionário sobre a temática "Saúde Psicológica e Bem-estar" em crianças e adolescentes em idade escolar, promovido pelo Ministério da Educação em 2022, após o período de pandemia Covid-19. O objetivo deste estudo é o diagnóstico e conhecimento do panorama da saúde psicológica e bem-estar dos alunos em diferentes regiões de Portugal. Os dados disponibilizados referem-se a um excerto das respostas dos alunos (ou dos seus educadores) ao questionário aplicado, relativamente a algumas das perguntas enquadradas nos objetivos definidos e alguma informação de caracterização das crianças e jovens.
+
+</div>
+
+
+<div style="text-align: justify">
+
+Com a realização do caso prático, pretende-se a preparação e organização do conjunto de dados e correspondente análise descritiva, em função do contexto e objetivos definidos. Para tal, utilizaremos as competências adquiridas nesta unidade curricular, empregando as ferramentas supracitadas para conduzir a análise exploratória dos dados, executando as seguintes tarefas:
+
+-   Preparação e organização do conjunto de dados;
+-   Realização de análise descritiva;
+-   Representação gráfica dos resultados;
+-   Discussão dos resultados obtidos e interpretação dos mesmos em função dos objetivos definidos.
+
+</div>
+
+
+
+<br> <br>
+
+
+<H3 style="text-align: left;">
+
+
+3. Análise de resultados
+
+</H3>
+
+<div style="text-align: justify">
+
+Com o objetivo de diagnosticar e compreender a situação da saúde mental e bem-estar de crianças e adolescentes em idade escolar (do pré-escolar ao 12º ano) em diferentes regiões de Portugal, após o período de pandemia da Covid-19, foram realizadas algumas perguntas que se referem a aspectos de saúde psicológica e bem-estar, bem como informações de caracterização dos alunos e suas respostas, a fim de obter um panorama da situação.
+
+</div>
+
+
+<div style="text-align: justify">
+
+Após o tratamento de dados para uma melhor recolha e compreensão da informação, é iniciada a fase de os descrever e sumarizar (análise descritiva). Através da análise dos dados é possível obter informações relevantes, normalmente expressadas percentualmente.
+
+</div>
+
+```{r include=FALSE}
+# Importação das bibliotecas necessárias
+
+library(openxlsx)
+library(psych)
+library(ggplot2)
+library(knitr)
+library(jmv)
+```
+
+```{r echo=FALSE}
+# Leitura do csv
+
+bd <-read.xlsx("AED_CP9.xlsx")
+```
+
+
+```{r include=FALSE}
+# Estrutura e nome das variáveis
+
+str(bd)
+names(bd)
+```
+
+
+
+```{r include=FALSE}
+
+# Mudar o nome das variáveis
+colnames(bd)[which(names(bd) == "P3")] <- "idade"
+colnames(bd)[which(names(bd) == "P5")] <- "nível de escolaridade do pai"
+colnames(bd)[which(names(bd) == "P6")] <- "nível de escolariade da mãe"
+colnames(bd)[which(names(bd) == "v21")] <- "sensibilidade aos sentimentos dos outros"
+colnames(bd)[which(names(bd) == "v22")] <- "inquietude e agitação"
+colnames(bd)[which(names(bd) == "v24")] <- "compartilhamento com outras crianças"
+colnames(bd)[which(names(bd) == "v25")] <- "irritabilidade e birras"
+colnames(bd)[which(names(bd) == "v26")] <- "tendência ao isolamento social"
+colnames(bd)[which(names(bd) == "Pj")] <- "inquietude motora"
+colnames(bd)[which(names(bd) == "Pl")] <- "agressividade em relação às outras crianças"
+colnames(bd)[which(names(bd) == "Ecra_Q558")] <- "tempo diário de exposição a ecrãs"
+
+colnames(bd)
+```
+
+
+```{r include=FALSE}
+# Determinação do número de valores omissos para cada variável
+
+na_table <- data.frame("Nº dados omissos" = colSums(is.na(bd)))
+kable(na_table)
+```
+
+```{r include=FALSE}
+# Imputação pela mediana na vartável "tempo diário de exposição a ecrãs"
+
+mediana <- median(bd$"tempo diário de exposição a ecrãs",na.rm=TRUE)
+mediana
+
+bd$"tempo diário de exposição a ecrãs"[which(is.na(bd$"tempo diário de exposição a ecrãs"))] <- mediana
+```
+
+
+<div style="text-align: justify">
+
+O inquérito foi realizado por meio de questionário e obteve respostas de 195 pessoas, das quais 95 eram do sexo feminino (48.7%) e 100 do sexo masculino (51.3%) (ver Tabela 1). Todos os participantes são da região do Algarve e as crianças envolvidas estão matriculadas no 1º ciclo.
+
+</div>
+
+
+
+
+
+```{r echo=FALSE}
+tabela_freq_absolutas_genero <- table(bd[,4])
+
+# Tabela de frequências relativas do género
+
+tabela_freq_relativas_genero <- 
+    round(prop.table(tabela_freq_absolutas_genero) * 100,1)
+
+tabela_completa_genero <- cbind(Frequências_absolutas = tabela_freq_absolutas_genero, Percentagens = tabela_freq_relativas_genero)
+
+
+colnames(tabela_completa_genero) <- c("Número de respostas", "Percentagem")
+
+
+titulo_tabela <- "<span style='display:block;text-align:center;font-weight:bold'>Tabela 1 - Tabela de frequências do género</span>"
+
+
+tabela_completa_genero[,2] <- paste0(tabela_completa_genero[,2], "%")
+
+
+# imprimindo a tabela completa com os novos headers e o título
+kable(tabela_completa_genero, caption = titulo_tabela, align = "c")
+```
+
+
+
+<br> <br>
+
+<div style="text-align: justify">
+
+Em relação à sensibilidade relativamente aos outros, podemos constatar tal como se apresenta na tabela de seguida que a grande maioria das crianças demostra ter muita sensibilidade aos outros ("É muito verdade"), com apenas 5.2% a não demonstrarem essa sensibilidade.
+
+</div>
+
+```{r echo=FALSE}
+tabela_freq_absolutas_sensibilidade <- table(bd[,9])
+rownames(tabela_freq_absolutas_sensibilidade) <- 
+  c("Não é verdade", "É pouco verdade", "É muito verdade")
+
+
+# Tabela de frequências relativas da sensibilidade
+
+tabela_freq_relativas_sensibilidade <- 
+  round(prop.table(tabela_freq_absolutas_sensibilidade) * 100,1)
+
+tabela_completa_sensibilidade <- cbind(Frequências_absolutas = tabela_freq_absolutas_sensibilidade, Percentagens =tabela_freq_relativas_sensibilidade)
+
+
+colnames(tabela_completa_sensibilidade) <- c("Número de Respostas", "Percentagem")
+
+titulo_tabela <- "<span style='display:block;text-align:center;font-weight:bold'>Tabela 2 - Tabela de frequências da sensibilidade</span>"
+
+tabela_completa_sensibilidade[,2] <- paste0(tabela_completa_sensibilidade[,2], "%")
+
+kable(tabela_completa_sensibilidade, caption = titulo_tabela, align = "c")
+```
+
+<br> De seguida, apresenta-se o gráfico de barras relativamente ao nível de concordância da sensibilidade.
+
+<center>
+
+```{r echo=FALSE}
+barplot(tabela_freq_absolutas_sensibilidade, col="lightblue", ylim=c(0,200), cex.names=0.9,
+        xlab="Grau de concordância", ylab="Frequência", las=1)
+
+
+text(0.7,17, tabela_freq_absolutas_sensibilidade[1])
+text(1.9,40, tabela_freq_absolutas_sensibilidade[2])
+text(3.1,160, tabela_freq_absolutas_sensibilidade[3])
+```
+
+</center>
+
+<br> <br>
+
+Relativamente ao isolamento social, um dos fatores mais importantes a analisar num contexto pós-pandémico, verifica-se que, na amostra considerada, a maioria das crianças demonstrou falta do contacto pessoal, visível pela grande maioria delas não ser verdade que tenham algum nível de isolamento social (78.6%).
+
+```{r echo=FALSE}
+# Tabela de frequências absolutas da tendência de isolamento
+# social
+
+tabela_freq_absolutas_isolamento <- table(bd[,13])
+rownames(tabela_freq_absolutas_isolamento) <- 
+  c("Não é verdade", "É pouco verdade", "É muito verdade")
+
+# Tabela de frequências relativas da tendência de isolamento
+# social
+
+tabela_freq_relativas_isolamento <- 
+  round(prop.table(tabela_freq_absolutas_isolamento) * 100,1)
+
+tabela_completa_isolamento <- cbind(Frequências_absolutas = tabela_freq_absolutas_isolamento, Percentagens = tabela_freq_relativas_isolamento)
+
+colnames(tabela_completa_isolamento) <- c("Número de respostas", "Percentagem")
+
+
+titulo_tabela <- "<span style='display:block;text-align:center;font-weight:bold'>Tabela 3 - Tabela de frequências do isolamento</span>"
+
+
+tabela_completa_isolamento[,2] <- paste0(tabela_completa_isolamento[,2], "%")
+
+kable(tabela_completa_isolamento, caption = titulo_tabela, align = "c")
+```
+
+<br> Apresenta-se o gráfico de barras correspondente ao grau de concordância do isolamento.
+
+```{r echo=FALSE}
+barplot(tabela_freq_absolutas_isolamento, col="lightblue", ylim=c(0,200), cex.names=0.9,
+        xlab="Grau de concordância", ylab="Frequência", las=1)
+
+
+text(0.7,160, tabela_freq_absolutas_isolamento[1])
+text(1.9,40, tabela_freq_absolutas_isolamento[2])
+text(3.1,15,tabela_freq_absolutas_isolamento[3])
+```
+
+<br>
+
+Ainda relativamente ao isolamento social, decidiu fazer-se uma análise para perceber se o nível de isolamento social varia consoante o género.
+<br>
+
+```{r echo=FALSE}
+# Tabela que mostra a frequência absoluta da tendência de cada género para 
+# o isolamento social
+
+tabela_freq_absolutas_isolamento_por_genero <- table(bd[, c(4)], bd[, c(13)])
+colnames(tabela_freq_absolutas_isolamento_por_genero) <- 
+  c("Não é verdade", "É pouco verdade", "É muito verdade")
+
+titulo_tabela <- "<span style='display:block;text-align:center;font-weight:bold'>Tabela 4 - Tabela de frequências do isolamento por género</span>"
+
+kable(tabela_freq_absolutas_isolamento_por_genero, caption = titulo_tabela, align = "c")
+
+
+
+# Tabela que mostra a frequência relativa da tendência de cada género para 
+# o isolamento social
+
+tabela_freq_relativas_isolamento_por_genero <- 
+  round(prop.table(tabela_freq_absolutas_isolamento_por_genero) * 100,1)
+
+tabela_freq_relativas_isolamento_por_genero[,1:3] <- paste0(tabela_freq_relativas_isolamento_por_genero[,1:3], "%")
+
+
+kable(tabela_freq_relativas_isolamento_por_genero, align = "c")
+```
+<center>
+
+```{r echo=FALSE}
+barplot(tabela_freq_absolutas_isolamento_por_genero, 
+        main = "Isolamento por género", 
+        xlab = "Grau de concordância", 
+        ylab = "Frequência",
+        legend = rownames(tabela_freq_absolutas_isolamento_por_genero),
+        col = c("blue", "yellow"), beside=TRUE, ylim=c(0,100))
+
+text(1.5,90, tabela_freq_absolutas_isolamento_por_genero[1,1])
+text(2.5,72, tabela_freq_absolutas_isolamento_por_genero[2,1])
+text(4.5,15, tabela_freq_absolutas_isolamento_por_genero[1,2])
+text(5.5,30, tabela_freq_absolutas_isolamento_por_genero[2,2])
+text(7.5,5, tabela_freq_absolutas_isolamento_por_genero[1,3])
+text(7.5,5, tabela_freq_absolutas_isolamento_por_genero[1,3])
+text(8.5,11, tabela_freq_absolutas_isolamento_por_genero[2,3])
+```
+</center>
+
+
+<div style="text-align: justify">
+Apesar de a grande maioria das crianças não se isolarem, aqueles que demonstram maior nível de isolamento são os rapazes (31) face às raparigas (10).
+</div>
+
+<br>
+
+
+<div style="text-align: justify">
+Já no que diz respeito à agressividade, como pode ser verificado na tabela a seguir, a maioria das crianças não parece apresentar qualquer tipo de agressividade (65.8%). Isso significa que a maioria das crianças não demonstra comportamentos agressivos.
+</div>
+
+```{r echo=FALSE}
+# Tabela de frequências absolutas da agressividade em relação
+# às outras crianças
+
+tabela_freq_absolutas_agressividade <- table(bd[,15])
+rownames(tabela_freq_absolutas_agressividade) <- 
+  c("Não é verdade", "É pouco verdade", "É muito verdade")
+
+# Tabela de frequências relativas da agressividade em relação
+# às outras crianças
+
+tabela_freq_relativas_agressividade <- 
+  round(prop.table(tabela_freq_absolutas_agressividade) * 100,1)
+
+
+tabela_completa_agressividade <- cbind(Frequências_absolutas = tabela_freq_absolutas_agressividade, Percentagens =tabela_freq_relativas_agressividade)
+
+
+colnames(tabela_completa_agressividade) <- c("Número de respostas", "Percentagem")
+
+
+titulo_tabela <- "<span style='font-weight:bold'>Tabela 5 - Tabela de frequências da agressividade</span><br><br>"
+
+tabela_completa_agressividade[,2] <- paste0(tabela_completa_agressividade[,2], "%")
+
+kable(tabela_completa_agressividade, caption = titulo_tabela, align = "c")
+```
+<br>
+
+
+<div style="text-align: justify">
+A pandemia de COVID-19 criou, em todos os estudantes, a necessidade de realizar as atividades escolares online. Assim, as crianças do primeiro ciclo passaram a ter ainda mais contacto com dispositivos eletrónicos, para além daquele que, certamente, já teriam num contexto de lazer, uma vez que vivemos numa era digital em que o acesso às tecnologias é cada vez mais precoce. Desta forma, achamos pertinente analisar, se, mesmo após a retoma do ensino presencial, as crianças continuam a estar expostas a ecrãs durante muitas horas, diariamente.
+</div>
+<br>
+
+```{r echo=FALSE}
+# Tabela de frequências absolutas de quanto tempo
+# as crianças passam no ecrã
+
+tabela_freq_absolutas_ecra <- table(bd[,16])
+
+# Tabela de frequências relativas de quanto tempo
+# as crianças passam no ecrã
+
+tabela_freq_relativas_ecra <- 
+  round(prop.table(tabela_freq_absolutas_ecra) * 100,1)
+
+
+tabela_completa_ecra <- cbind(Frequências_absolutas = tabela_freq_absolutas_ecra, Percentagens =tabela_freq_relativas_ecra)
+
+
+colnames(tabela_completa_ecra) <- c("Número de respostas", "Percentagem")
+
+
+titulo_tabela <- "<span style='font-weight:bold'>Tabela 6 - Tabela de frequências do tempo passado num ecrã (número de horas)</span><br><br>"
+
+tabela_completa_ecra[,2] <- paste0(tabela_completa_ecra[,2], "%")
+
+kable(tabela_completa_ecra, caption = titulo_tabela, align = "c")
+```
+
+
+<center>
+
+```{r echo=FALSE}
+#cores <- terrain.colors(length(tabela_freq_absolutas_ecra))
+#cores <- c("blue", "yellow", "green", "red")
+cores <- c("blue", "#DAA520", "#006400", "purple", "red")
+
+
+labels <- c("0", "1","2", "3", "4")
+percentagens <- round(tabela_freq_absolutas_ecra / sum(tabela_freq_absolutas_ecra) * 100, 1)
+
+etiquetas_percentagens <- paste0(labels, " (", percentagens, "%)")
+
+# Definir o raio do gráfico circular
+raio <- 0.8
+
+pie(percentagens, col = cores, labels = rep("", length(labels)), main = "Tempo diário de exposição a ecrãs", radius = raio)
+
+# Ajustar a posição da legenda
+legend("topright", legend = etiquetas_percentagens, cex = 0.8, fill = cores, xpd = TRUE, inset = c(0, 0))
+```
+</center>
+
+<div style="text-align: justify">
+A partir do gráfico, podemos observar que a maioria das crianças (65.3%) passam apenas 1 hora por dia em frente a um ecrã, enquanto uma parcela significativa (27.6%) passa 2 horas por dia. A quantidade de crianças que passam 3 horas ou mais por dia em frente a um ecrã é relativamente pequena, com apenas 4.6% das crianças passando 3 horas e 0.5% passando 4 horas por dia. Um pequeno número de crianças (2%) não passa nenhuma hora por dia em frente a um ecrã. 
+
+É importante recordar que, de acordo com as recomendações da *American Academy of Pediatrics*, as crianças com idades compreendidas entre os 2 e os 5 anos devem ter, no máximo, uma hora de exposição diária aos ecrãs, enquanto as crianças mais velhas devem ter limites claros de tempo em frente ao ecrã e tempo suficiente para outras atividades, tais como brincadeiras e exercício físico. Por conseguinte, é preocupante constatar que uma parte significativa das crianças passa mais de duas horas por dia em frente ao ecrã, uma vez que isto pode ter impactos negativos na sua saúde física e mental, incluindo problemas de sono, aumento da obesidade e diminuição do desempenho académico. É fundamental que os pais e cuidadores estabeleçam limites claros e incentivem outras atividades educativas e recreativas, a fim de assegurar o bem-estar das crianças. Contudo, no caso desta amostra, felizmente, não se verifica esta tendência negativa esperada. (https://www.healthychildren.org/English/family-life/Media/Pages/Tips-for-Parents-Digital-Age.aspx)
+</div>
+
+<br>
+<div style="text-align: justify">
+De forma a perceber o impacto  do tempo passado em frente a um ecrã nos comportamentos sociais, decidimos analisar diversas questões: irritabilidade e birras, tendência ao isolamento social, partilha com os outros e agitação.
+</div>
+
+```{r include=FALSE}
+# Descritas para o "compartilhamento com outras crianças" e "irritabilidade e birras" 
+
+jmv::descriptives(
+    data = bd,
+    vars = vars("compartilhamento com outras crianças", "irritabilidade e birras"),
+    freq = TRUE)
+```
+
+
+```{r include = FALSE}
+# Apesar de o código para gerado pelo Jamovi ter sido este, não conseguimos com que o gráfico aparecesse copiando o código para o R, então optamos por incluir as imagens dos gráficos
+
+jmv::contTables(formula = `tempo diário de exposição a ecrãs` ~ `sensibilidade aos sentimentos dos outros`, data = bd, barplot = TRUE)
+```
+
+<br>
+
+```{r,fig.align="center", fig.width=6, fig.height=4,echo=FALSE, message=FALSE}
+include_graphics("irritabilida_e_birras_tempo_ecra.jpeg")
+```
+<div style="text-align: justify">
+Analisando o gráfico, verifica-se que há uma subida significativa da irritabilidade/birras de 0h para 1h do tempo de ecrã, contudo a partir das 2h esse nível começa, genericamente, gradualmente a descer, o que pode ser fruto de fraca interação social por elevado tempo de exposição aos ecrãs. 
+</div>
+
+<br>
+
+
+
+```{r,fig.align="center", fig.width=6, fig.height=4,echo=FALSE, message=FALSE}
+include_graphics("partilha_e_tempo_ecra.jpeg")
+```
+<div style="text-align: justify">
+Para qualquer tempo diário de exposição a ecrãs, a maioria das crianças preocupa-se em partilhar com os outros.
+</div>
+<br>
+
+
+```{r,fig.align="center", fig.width=6, fig.height=4,echo=FALSE, message=FALSE}
+include_graphics("agitacao_e_tempo_ecra.jpeg")
+```
+<div style="text-align: justify">
+A partir de duas horas diárias de exposição a ecrãs, observa-se um aumento na agitação em comparação àqueles que não são expostos a ecrãs por esse tempo.
+</div>
+
+
+
+```{r include=FALSE}
+# Medidas descritivas de variáveis quantitativas
+
+describe(bd[,c(5,16)])
+```
+
+
+
+<H3 style="text-align: justify;">
+
+4. Conclusão
+
+</H3>
+
+<div style="text-align: justify">
+A análise dos dados permitiu tirar conclusões relevantes acerca das características e comportamentos das crianças do 1º ciclo no Algarve.<br>
+No que diz respeito à sensibilidade relativamente aos outros, verificámos que a maioria das crianças mostraram ser empáticas com o próximo, fruto também possivelmente do período negativo vivido no contexto pandémico. Assim, este resultado foi de encontro ao que esperávamos, uma vez que na escola existem várias interações sociais, o que contribui para a entreajuda e compreensão relativamente aos outros.<br>
+Relativamente ao isolamento social, contrariamente ao expectável pelo facto de as aulas online terem propiciado tendências à solidão, as crianças demonstraram ter um baixo nível de isolamento, o que pode ser explicado pela necessidade de estabelecer conexões, fruto do confinamento.<br>
+Hoje em dia as crianças têm acesso à tecnologia muito cedo, sendo que a maioria delas costuma passar elevadas horas em frente a um ecrã. Desta forma, esperaríamos que o número de horas passado pela maioria fosse superior. Os resultados obtidos possivelmente relacionam-se com o facto de os pais das crianças desta amostra controlarem o tempo que passam em frente aos ecrãs.<br>
+Em suma, as crianças do 1º ciclo no Algarve demonstraram ser empáticas, ter um baixo nível de isolamento social e um uso moderado de tecnologia, sugerindo um panorama favorável de saúde psicológica e bem-estar pós-pandémico.
+</div>
