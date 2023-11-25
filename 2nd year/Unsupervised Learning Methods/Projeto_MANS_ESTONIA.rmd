@@ -1,0 +1,770 @@
+---
+title: Estudo do PISA na Estónia em 2018
+date:  15 de Junho de 2023
+output:
+  prettydoc::html_pretty:
+    df_print: paged
+    theme: architect
+    highlight: github
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Discentes:**
+
+Eliane Gabriel N° 103303
+
+João Botas N° 104782
+
+Marco Esperança N° 110451
+
+Maria João Lourenço N° 104716
+
+Umeima Mahomed N° 99239
+
+***
+
+```{r, echo=FALSE, message = FALSE, warning = FALSE}
+# Remover tudo!
+rm(list=ls(all=TRUE))
+# importação das bibliotecas utilizadas
+pacman::p_load(dplyr, haven, psych, corrplot, svglite, skimr, plotrix, sjstats, modeest, cluster, tidyverse, caret, factoextra, mclust, mice, gpairs, gridExtra, naniar, ggplot2)
+
+# definir uma seed
+set.seed(777)
+```
+
+### **Leitura do ficheiro de dados**
+
+```{r}
+# importação da base de dados em formato rds
+dados <- readRDS("STU_QQQ_5.rds") 
+
+# primeiras 6 linhas do dataset
+dados %>% glimpse() %>% select(1:6)
+```
+
+```{r}
+# número de linhas e colunas, respetivamente, no dataset inteiro
+dim(dados)
+```
+
+A base de dados inicial com todos os países tem `r dim(dados)[1]` linhas e`r dim(dados)[2]` colunas.
+
+```{r, echo=FALSE, message=FALSE}
+# nome de todas as colunas 
+colnames(dados)
+```
+
+```{r}
+# CNT tem código com nomes dos países
+# códigos dos países presentes no dataset por ordem alafabética
+sort(unique(dados$CNT))
+```
+
+Após a visualização dos países que existiam na nossa base de dados, escolhemos a Estónia.
+
+### **Limpeza de omissos e filtragem para o país**
+
+```{r, echo=FALSE, message=FALSE}
+# filtrar o dataset apenas para a Estónia - EST
+dados_est <- filter(dados, CNT== 'EST')
+```
+
+Dimensão do dataset da Estónia
+
+```{r}
+# número de linhas e colunas, respetivamente, após a filtragem
+dim(dados_est)
+```
+
+O nosso dataset filtrado para a Estónia tem `r dim(dados_est)[1]` linhas e `r dim(dados_est)[2]` colunas.
+
+```{r, echo=FALSE}
+#estatística descritiva das variáveis
+summary(dados_est)
+```
+
+De forma muito resumida, percebemos que temos variáveis numéricas e categóricas, sendo as primeiras as mais comuns. Também temos variáveis completamente vazias.
+
+```{r}
+# colunas antes da alteração
+before_cols <- ncol(dados_est)
+
+# retirar as colunas que estão com todos os campos omissos
+dados_est <- dados_est %>% select(-which(colSums(is.na(.)) == nrow(.)))
+
+# colunas após a alterção
+after_cols <- ncol(dados_est)
+
+cat("Foram retiradas",before_cols-after_cols,"colunas da nossa base de dados, 
+    com o filtro em Estónia, país selecionado.")
+```
+
+```{r}
+# dimensão do dataset filtrado e sem as colunas completamente vazias
+dim(dados_est)
+
+# número de colunas numéricas
+sum(sapply(dados_est, is.numeric))
+
+# número de colunas categóricas
+sum(sapply(dados_est, is.character))
+```
+
+Ficamos com `r dim(dados_est)[1]` linhas e `r dim(dados_est)[2]` colunas, sendo que 67 são numéricas e 5 são categóricas.
+
+Colunas selecionadas para tentativa de análise de componentes
+
+```{r}
+num_vars <- c("PV1SCIE","PV1READ", "PV1MATH", "SOIAICT", "AUTICT", "COMPICT", "INTICT","ENTUSE", "BEINGBULLIED", "BELONG", "MASTGOAL", "RESILIENCE", "SWBP", "EUDMO", "GFOFAIL", "WORKMAST", "SCREADCOMP", "JOYREAD", "TEACHINT", "ADAPTIVITY", "STIMREAD", "EMOSUPS", "PERFEED", "DIRINS", "TEACHSUP", "WEALTH", "CULTPOSS", "HOMEPOS", "ESCS", "SMINS", "LMINS", "MMINS", "ST059Q03TA", "ST059Q02TA", "ST059Q01TA", "ST016Q01NA","USESCH","HOMESCH",
+"ST004D01T","GRADE","HISCED")
+
+dados_est <- dados_est[,num_vars]
+```
+
+```{r}
+my_skim <- skim_with(
+  numeric = sfl(SEM = plotrix::std.error,sjstats::cv,
+                "Mode" = ~ modeest::mlv1(., na.rm = T, method = "mfv"),
+                "sk" = ~ PerformanceAnalytics::skewness(., na.rm = T, 
+                                                        method = "sample"),
+                "ku" = ~ PerformanceAnalytics::kurtosis(
+                  ., na.rm = T, method = "sample_excess")),append = T)
+
+dados_est[,num_vars] %>% my_skim() %>% knitr::kable(
+  digits=2, caption = 'Descriptives with histogram',
+               col.names = c("Scale of Measurement", "Item", "$N_{missing}$", 
+                             "Complete prop.",
+                             "$M$", "$SD$", "$Min$", "$P_{25}$", "Mdn", 
+                             "$P_{75}$", "$Max$",
+                             "Histogram", "$SEM$","$CV$", "$Mode$", "$sk$", 
+                             "$ku$"))
+```
+
+
+```{r}
+colSums(is.na(dados_est))
+```
+
+
+
+```{r teste de Little}
+naniar::mcar_test(dados_est)
+```
+p-value < 0.001, ou seja, o missing data não é completamente aleatório.
+
+
+Vemos que existem valores omissos em certas colunas, sendo que estes valores variam de 0 a 576 observações.
+
+
+Em termos percentuais, os valores omissos no máximo correspondem a cerca de 10% das observações totais presentes nessa coluna.
+
+Retirar as linhas que têm dados omissos em algum campo - só deixar casos com os campos todos preenchidos
+
+```{r, echo=FALSE}
+# experiência com imputação de dados
+dados_est <- as.data.frame(lapply(dados_est, as.numeric))
+imputation_modl <- mice(dados_est)
+imputed_est <- complete(imputation_modl)
+```
+
+```{r}
+saveRDS(imputed_est, "imputed_data_est.rds")
+```
+
+
+```{r}
+colSums(is.na(imputed_est))
+# View(dados_est)
+# View(imputed_est)
+```
+
+
+```{r}
+# forma feita sem papinha
+before_rows <- nrow(dados_est)
+
+dados_est1 <- dados_est %>% filter(complete.cases(.))
+
+after_rows <- nrow(dados_est1)
+
+cat("Foram retiradas",before_rows-after_rows,"linhas da nossa base de dados, 
+que não tinham os dados completos para todas as colunas.",
+"Ficaram", after_rows, "linhas na nossa base de dados.")
+```
+
+
+
+```{r}
+# número de linhas e colunas, respetivamente, após a filtragem e 
+# eliminação de colunas completamente vazias, 
+# das que foram selecionadas anteriormente
+colSums(is.na(dados_est1))
+```
+
+Observamos que já não existem dados omissos em nenhuma variável.
+
+```{r}
+dim(dados_est1)
+```
+
+Ficamos com `r dim(dados_est1)[1]` linhas e `r dim(dados_est1)[2]` colunas para PCA, onde três são de profile.
+
+```{r}
+dados_est1_profile <- dados_est1
+dados_est1 <- dados_est1[,1:38]
+# ver se ficou bem atribuído
+
+# dim(dados_est1)
+# dim(dados_est1_profile)
+```
+
+
+### **Estandardização e correlações**
+
+Retorna um ficheiro .svg para a matriz de correlação.
+
+```{r}
+svg("correlation_matrix.svg", width = 20, height = 20, pointsize = 12)
+
+corr <- dados_est1 %>%
+  select_if(is.numeric) %>%
+  cor()
+
+col <- colorRampPalette(c("#0C7BDC", 
+                          "#2DD791",
+                          "#FFFFFF",
+                          "#FFC20A", 
+                          "#FF8D31"))
+
+corrplot(corr,  type = "upper",
+  method = "ellipse", shade.col = NA, tl.col = "black", tl.srt = 45,
+         col = col(200), addCoef.col = "black", 
+         cl.pos = "n", order = "hclust", diag = FALSE)
+
+dev.off()
+
+```
+
+```{r}
+# Correlation matrix de valores com um limite de print
+correlation <- dados_est1 %>%
+  select_if(is.numeric) %>%
+  cor()
+options(max.print=100)
+round(correlation, 3)
+```
+
+```{r}
+# Bartlett test 
+# Input is the correlation matrix
+cortest.bartlett(dados_est1)
+```
+
+O teste de Bartlett mostra que os dados são adequados para PCA, sabendo que o Qui quadrado com 780 graus de liberdade dá `r` e o p-value é menor que 0.05.
+
+```{r}
+# KMO métrica
+KMO(dados_est1)
+```
+
+Temos um valor de KMO de 0.68, o que é aceitável.
+
+```{r}
+# Estandardizar as variáveis numéricas
+
+non_numeric <- sapply(dados_est1, function(x) !is.numeric(x))
+
+num_numeric <- sum(sapply(dados_est1, is.numeric))
+
+data_scaled <- dados_est1[, !non_numeric] %>%
+  mutate_if(is.numeric, scale)
+
+cat("Foram estandardizadas",num_numeric,"variáveis numéricas.")
+```
+
+```{r}
+# Assumir que número de componentes = 38
+options(max.print=2500)
+pc38 <- principal(data_scaled, nfactors=num_numeric, rotate="none", scores=TRUE)
+```
+
+```{r}
+# eingenvalues
+round(pc38$values,3)
+```
+
+```{r}
+# screeplot
+plot(pc38$values, type = "b", main = "Scree plot for PISA in Estonia", 
+     xlab = "Number of PC", ylab = "Eingenvalue")
+```
+
+```{r}
+pc38$loadings
+```
+
+```{r}
+# communalities
+pc38$communality
+```
+
+### **Extrair uma solução com 7 componentes**
+
+```{r}
+pc7 <- principal(data_scaled, nfactors=7, rotate="none")
+pc7$loadings
+```
+
+```{r}
+# rodar os 7 componentes usando VariMax
+pc7r <- principal(data_scaled, nfactors=7, rotate="varimax")
+pc7r$loadings
+```
+
+```{r}
+# rodar os 7 componentes usando QuartiMax
+pc7q <- principal(data_scaled, nfactors=7, rotate="quartimax")
+pc7q$loadings
+```
+
+```{r}
+# rodar os 7 componentes usando ObliMin
+pc7o <- principal(data_scaled, nfactors=7, rotate="oblimin")
+pc7o$loadings
+```
+
+```{r}
+round(pc7$communality,2)
+```
+
+### **Extrair uma solução com 6 componentes**
+
+```{r}
+pc6 <- principal(data_scaled, nfactors=6, rotate="none")
+pc6$loadings
+```
+
+```{r}
+# rodar os 6 componentes usando VariMax
+pc6r <- principal(data_scaled, nfactors=6, rotate="varimax")
+pc6r$loadings
+```
+
+```{r}
+# rodar os 6 componentes usando QuartiMax
+pc6q <- principal(data_scaled, nfactors=6, rotate="quartimax")
+pc6q$loadings
+```
+
+```{r}
+# rodar os 6 componentes usando ObliMin
+pc6o <- principal(data_scaled, nfactors=6, rotate="oblimin")
+pc6o$loadings
+```
+
+```{r}
+round(pc6$communality,2)
+```
+
+### **Extrair uma solução com 11 componentes**
+
+```{r}
+pc11 <- principal(data_scaled, nfactors=11, rotate="none")
+pc11
+```
+
+```{r}
+# rodar os 11 componentes usando VariMax
+pc11r <- principal(data_scaled, nfactors=11, rotate="varimax")
+pc11r$loadings
+```
+
+```{r}
+round(pc11$communality,2)
+```
+
+```{r}
+pc6sc <- principal(data_scaled, nfactors = 6, rotate = "none", scores = TRUE)
+#round(pc6sc$scores,3)
+```
+
+```{r}
+# Estandardizar as variáveis numéricas
+
+non_numeric_imp <- sapply(imputed_est, function(x) !is.numeric(x))
+
+num_numeric_imp <- sum(sapply(imputed_est, is.numeric))
+
+data_scaled_imputed <- imputed_est[, !non_numeric_imp] %>%
+  mutate_if(is.numeric, scale)
+
+pc6_w_imp <- principal(data_scaled_imputed, nfactors = 6, rotate = "none", scores = TRUE)
+pc6_w_imp
+```
+
+
+```{r nomenclatura dos PCA}
+dados_est2 <- dados_est1_profile
+dados_est2$ambition <- pc6sc$scores[, 1]
+dados_est2$achievement <- pc6sc$scores[, 2]
+dados_est2$ICT <- pc6sc$scores[, 3]
+dados_est2$learning_time <- pc6sc$scores[, 4]
+dados_est2$mental_health <- pc6sc$scores[, 5]
+dados_est2$support <- pc6sc$scores[, 6]
+
+# colnames(dados_est2) 
+estonia_pca <- dados_est2[,39:47]
+head(estonia_pca)
+```
+
+
+```{r}
+# selecionar aproximadamente, 1/4 dos dados
+estonia_pca_100 <- estonia_pca[1:100,]
+estonia_pca_1000 <- estonia_pca[1:1000,]
+```
+
+```{r}
+cor(estonia_pca)
+```
+
+```{r}
+svg("pairs_pca.svg", width = 20, height = 20)
+gpairs(estonia_pca[,4:9], lower.pars = list(scatter = 'stats'), upper.pars = list(scatter = 'loess'), stat.pars = list(verbose = FALSE, cex=2.5), gap = 0)
+dev.off()
+```
+
+```{r plots Ambition}
+(plot1 <- ggplot(estonia_pca_1000, aes(x = ambition, y = achievement)) +
+  geom_point(shape = 19) +
+  xlim(-4, 4) +
+  ylim(-4, 4) +
+  xlab("Ambition") +
+  ylab("Achievement") +
+  ggtitle("Scores: Ambition vs Achievement"))
+
+(plot2 <- ggplot(estonia_pca_1000, aes(x = ambition, y = support)) +
+  geom_point(shape = 19) +
+  xlim(-4, 5) +
+  ylim(-4, 5) +
+  xlab("Ambition") +
+  ylab("Support") +
+  ggtitle("Scores: Ambition vs Support"))
+```
+
+Ver se há alguma relação entre o tempo de aprendizagem e as áreas tecnológicas.
+
+```{r plot Learning Time vs ICT}
+plot(estonia_pca_1000$learning_time, estonia_pca_1000$ICT, pch = 19, 
+     xlim = c(-4,5), cex=.8,
+   ylim = c(-4,5), xlab = "Learning Time", ylab = "ICT", 
+   main = "Scores: Learning Time vs ICT")
+options(repr.plot.width = 10, repr.plot.height = 10, message = FALSE)
+```
+
+Relação entre os resultados obtidos e a satisfação pessoal, mas também ver se existe uma relação entre a saúde mental face aos resultados.
+
+```{r plots}
+
+(plot_good <- ggplot(estonia_pca_1000, aes(x = learning_time, y = achievement)) +
+  geom_point(shape = 19) +
+  xlim(-4, 5) +
+  ylim(-5, 4) +
+  xlab("Learning Time") +
+  ylab("Achievement") +
+  ggtitle("Scores: Learning Time vs Achievement"))
+
+(plot_bad <- ggplot(estonia_pca_1000, aes(x = mental_health, y = achievement)) +
+  geom_point(shape = 19) +
+  xlim(-4, 4) +
+  ylim(-4, 4) +
+  xlab("Mental health") +
+  ylab("Achievement") +
+  ggtitle("Scores: Mental health vs Achievement"))
+```
+
+Apesar de não muito notório, parecem existir resultados melhores para pessoas com melhor satisfação com a vida, em comparação com as crianças que sejam mais pessimistas. Os resultados como estão estandardizados, são comparados face ao valor de referência da média (0), mas também com a dispersão dos pontos, que parece ser maior no 2º grupo referido.
+
+Ver a grid com os gráficos de Ambition e Achievement
+
+```{r}
+grid.arrange(plot1, plot2, plot_good, plot_bad, nrow = 2, ncol = 2)
+```
+
+
+```{r}
+saveRDS(estonia_pca, "estonia_pca.rds")
+```
+
+```{r}
+estonia_pca <- readRDS("estonia_pca.rds") 
+```
+
+***
+
+### **Clustering hierárquico**
+
+```{r Hclust Ward.D2}
+
+#Hierarchical cluster
+pc_dist <- dist(estonia_pca[,4:9])
+hclust <- hclust(pc_dist, method='ward.D2')
+```
+
+
+```{r Hclust Ward.D2 plot experiencia com 2 clusters}
+
+plot(hclust, hang=-1, labels=FALSE)
+
+# Cut the dendrogram
+groups.h2 <- cutree(hclust, k=2) # cut tree into 2 clusters
+rect.hclust(hclust, k=2, border="red") 
+
+```
+
+
+```{r Hclust Ward.D2 plot experiencia com 3 clusters}
+
+plot(hclust, hang=-1, labels=FALSE)
+
+# Cut the dendrogram
+groups.k3 <- cutree(hclust, k=3) # cut tree into 3 clusters
+rect.hclust(hclust, k=3, border="red") 
+
+```
+
+```{r experiencia com 4 clusters}
+
+plot(hclust, hang=-1, labels=FALSE)
+
+# Cut the dendrogram
+groups.h4 <- cutree(hclust, k=4) # cut tree into 4 clusters
+rect.hclust(hclust, k=4, border="red") 
+```
+
+```{r experiencia com 5 clusters}
+
+plot(hclust, hang=-1, labels=FALSE)
+
+# Cut the dendrogram
+groups.h5 <- cutree(hclust, k=5) # cut tree into 5 clusters
+rect.hclust(hclust, k=5, border="red") 
+```
+
+
+```{r Silhouette Ward.D2 2 clusters}
+
+#Silhouette
+plot(silhouette(groups.h2, pc_dist))
+# Based on the dendrogram select 2 clusters
+# Silhouette shows a very weak separation
+```
+
+
+```{r Silhouette Ward.D2 3 clusters}
+
+#Silhouette
+plot(silhouette(groups.k3, pc_dist))
+# Based on the dendrogram select 3 clusters
+# Silhouette shows a very weak separation
+```
+
+
+
+```{r Silhouette Ward.D2 4 clusters}
+
+#Silhouette
+plot(silhouette(groups.h4, pc_dist))
+# Based on the dendrogram select 4 clusters
+# Silhouette shows a very weak separation
+```
+
+```{r Silhouette Ward.D2 5 clusters}
+
+#Silhouette
+plot(silhouette(groups.h5, pc_dist))
+# Based on the dendrogram select 5 clusters
+# Silhouette still shows a very weak separation
+```
+
+
+
+```{r Hclust}
+
+#Hierarchical cluster method complete
+pc_dist <- dist(estonia_pca[,4:9]) # compute distance (no need of scaling)
+hclust  <- hclust(pc_dist,method='complete')
+```
+
+```{r Hclust plot}
+
+plot(hclust, hang=-1, labels=FALSE)
+# Cut the dendrogram
+groups.k3_c <- cutree(hclust, k=3) # cut tree into 3 clusters
+rect.hclust(hclust, k=3, border="red")
+```
+
+```{r Silhouette Hclust}
+
+#Silhouette
+plot(silhouette(groups.k3_c, pc_dist))
+```
+
+```{r}
+
+#crosstab
+table(groups.k3,groups.k3_c)
+```
+
+### **KMeans**
+
+```{r K-Means, warning=FALSE}
+
+wssplot <- function(xx, nc=15, seed=1234){
+  wss <- (nrow(xx)-1)*sum(apply(xx,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(xx, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")}
+wssplot(estonia_pca[,4:9], nc=10)
+```
+
+```{r warning = FALSE}
+
+kmeans.k4 <- kmeans(estonia_pca[,4:9], 4, nstart=100) 
+estonia_pca <-  estonia_pca %>% mutate(cluster = kmeans.k4$cluster)
+```
+
+
+```{r}
+colnames(estonia_pca) <- c("Gender","Grade","Par. educ.","Ambi", "Achiev", "ICT", "Learn. T.", "Mental H.", "Support", "cluster")
+# head(estonia_pca) # names are right!!!
+
+#crosstab
+table(groups.k3, estonia_pca$cluster)
+
+par(mfrow = c(2, 2))
+
+#Barplot of average score in each principal component within each cluster
+cluster1 <- barplot(colMeans(subset(estonia_pca,cluster==1)[,4:9]),main= "Cluster 1 - Avg score in each PC", ylim = c(-1, 1.5), cex.names = .64)
+cluster2 <- barplot(colMeans(subset(estonia_pca,cluster==2)[,4:9]),main= "Cluster 2 - Avg score in each PC", ylim = c(-1, 1.5), cex.names = .64)
+cluster3 <-barplot(colMeans(subset(estonia_pca,cluster==3)[,4:9]),main= "Cluster 3 - Avg score in each PC", ylim = c(-1, 1.5), cex.names = .64)
+cluster4 <- barplot(colMeans(subset(estonia_pca,cluster==4)[,4:9]),main= "Cluster 4 - Avg score in each PC", ylim = c(-1, 1.5), cex.names = .64) 
+
+par(mfrow = c(1, 1))
+```
+
+```{r Gender}
+#Barplot para cada género e a sua distribuição por cada cluster
+
+# barplot(prop.table(table(subset(estonia_pca,cluster==1)[,1])),main= "Cluster 1 vs. Gender", ylim = c(0, 1), names.arg = c("Female", "Male"))
+# barplot(prop.table(table(subset(estonia_pca,cluster==2)[,1])),main= "Cluster 2 vs. Gender", ylim = c(0, 1), names.arg = c("Female", "Male"))
+# barplot(prop.table(table(subset(estonia_pca,cluster==3)[,1])),main= "Cluster 3 vs. Gender", ylim = c(0, 1), names.arg = c("Female", "Male"))
+# barplot(prop.table(table(subset(estonia_pca,cluster==4)[,1])),main= "Cluster 4 vs. Gender", ylim = c(0, 1), names.arg = c("Female", "Male"))
+
+#crosstab
+
+crosstab_gender <- table(estonia_pca[,1],estonia_pca$cluster)
+rownames(crosstab_gender) <- c("Female", "Male")
+crosstab_gender
+```
+
+
+```{r Grade}
+crosstab_grade <- table(estonia_pca[,2],estonia_pca$cluster)
+crosstab_grade
+```
+
+
+```{r Hisced}
+crosstab_p_edu <- table(estonia_pca[,3],estonia_pca$cluster)
+crosstab_p_edu
+```
+
+### **PAM**
+
+```{r PAM para 2 clusters}
+std_data <- scale(estonia_pca[,4:9])
+pam.k2 <- pam(std_data, 2)
+table(groups.k3,pam.k2$clustering)
+#PCA and Clustering
+clusplot(pam.k2, labels = FALSE, col.p = pam.k2$clustering)
+```
+
+```{r PAM para 3 clusters}
+pam.k3 <- pam(std_data, 3)
+table(groups.k3,pam.k3$clustering)
+#PCA and Clustering
+clusplot(pam.k3, labels = FALSE, col.p = pam.k3$clustering)
+```
+
+```{r PAM para 4 clusters}
+pam.k4 <- pam(std_data, 4)
+table(groups.k3,pam.k4$clustering)
+#PCA and Clustering
+clusplot(pam.k4, labels = 4, col.p = pam.k4$clustering)
+```
+
+```{r BIC}
+BIC <- mclustBIC(estonia_pca[,4:9])
+plot(BIC)
+``` 
+
+
+```{r}
+# definir seed apenas para execução modular :)
+# GMM
+set.seed(777)
+```
+
+```{r GMM}
+library(mclust)
+# GMM with 4 components
+results.G4 <- Mclust(estonia_pca[,4:9], G = 4)
+summary(results.G4, parameters = TRUE)
+```
+
+```{r Alguns Resultados}
+
+# Alguns resultados 
+
+results.G4$modelName  # Modelo selecionado 
+
+# Número ótimo de clusters
+results.G4$G                  
+
+# Probabilidade de pertença a um determinado cluster
+head(results.G4$z, 5)        
+
+# Atribuição de cada obs. a um cluster
+head(results.G4$classification, 5)
+```
+
+```{r Classificação+Incerteza}
+
+# selecionar o VVE
+svg("classification_G4.svg", width = 20, height = 20, pointsize = 12)
+plot(results.G4, what = "classification")
+
+
+dev.off()
+svg("uncertainty_G4.svg", width = 20, height = 20, pointsize = 12)
+plot(results.G4, what = "uncertainty")
+dev.off()
+```
+
+```{r}
+write.csv(estonia_pca, "estonia_final.csv", row.names = FALSE)
+```
+
+
+
+

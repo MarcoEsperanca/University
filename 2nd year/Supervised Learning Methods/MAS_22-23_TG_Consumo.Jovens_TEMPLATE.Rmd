@@ -1,0 +1,362 @@
+--- 
+title: 'MAS: Trabalho de Grupo'
+author: "Maria João Ferreira Lourenço"
+date: "21 de março, 2023"
+output:
+  word_document: default
+  pdf_document: default
+---
+Preencher a identificação do grupo:  
+**NÚMERO DO GRUPO:**    7
+**LISTA DE TODOS OS ELEMENTOS DO GRUPO (Número - nome):**    
+
+Eliane Gabriel Nº 103303
+Marco Esperança Nº 110451
+Maria João Lourenço Nº104716
+Umeima Mahomed Nº 99239
+    
+      
+        
+          
+          
+
+
+O Trabalho de Grupo de *Métodos de Aprendizagem Supervisionada* refere-se à análise do data set "Consumo.Jovens.csv". 
+
+Neste data set incluem-se 1523 registos e 28 atributos listados a seguir:
+
+**q0**: País de residência  
+**q1**: Sexo  
+**q2**: Idade  
+**q3**: Situação estudantil  
+**q10**: Compra produtos de marca? (1-Sim; 2-Não)  
+**q12b_a**: Compra em centros comerciais? (1-Sim; 0-Não)  
+**q12b_b**: Compra em super/hipermercados? (1-Sim; 0-Não)  
+**q12b_c**: Compra no comércio local? (1-Sim; 0-Não)  
+**q13a**: Fidelidade a marcas? (1-Sim; 0-Não)  
+**q13b**: Fidelidade a lojas? (1-Sim; 0-Não)  
+
+Variáveis q14 na Escala 1-Nada Importante, 2, 3, 4, 5-Extremamente importante)   
+**q14a**: Preço  
+**q14b**: Necessidade do produto  
+**q14c**: Conveniência da localização da loja  
+**q14d**: Qualidade do produto  
+**q14e**: Imagem do produto  
+**q14f**: Imagem da loja  
+**q14g**: Características do produto  
+**q14h**: Promoção especial  
+**q14i**: Imagem da marca  
+**q14j**: Publicidade  
+
+Variáveis q19 na Escala 1-Discordo Completamente, 2, 3, 4, 5-Concordo Completamente)  
+**q19_1**: Alguns dos feitos + importantes da vida incluem adquirir bens materiais  
+**q19_2**: Não dou importância à quantidade de bens materiais  
+**q19_3**: Gosto de ter coisas para impressionar as pessoas    
+**q19_4**: Geralmente compro apenas aquilo de que preciso  
+**q19_5**: Gosto de gastar dinheiro em coisas que não são necessárias  
+**q19_6**: Comprar coisas dá-me imenso prazer  
+**q19_7**: Tenho todas as coisas de que preciso para ser feliz  
+**q19_8**: Seria mais feliz se tivesse dinheiro para comprar mais coisas   
+
+
+
+# Notas:
+1. Efetuar todos os Save com "Save with encoding UTF-8" de modo a manter palavras acentuadas e caracteres especiais**
+2. A cotação está anexa a cada pergunta 
+3. **OS ALUNOS QUE NÃO SUBMETEREM PDF NO MOODLE TERÃO UMA PENALIZAÇÃO DE 1 VALOR; SE, O FICHEIRO ALTERNATIVO QUE SUBMETEREM (VIA EMAIL) REPORTAR ERROS NA COMPILAÇÃO, TERÃO UMA PENALIZAÇÃO ADICIONAL DE 1 VALOR**  
+  
+  
+
+```{r}
+# Remover tudo!
+rm(list=ls(all=TRUE))#
+# Incluir as libraries de que necessita
+library(MASS) # dataset´s da base de dados do R
+library(Metrics) # calculo de métricas
+library(caret) # folds para validação cruzada; métricas de classificação
+library(lsr) # Cramer's V , eta, medida de associação
+library(e1071) # Naive Bayes
+library(psych) # estatistica descritiva
+library(ggplot2) # gráficos
+library(tree) # árvores de decisão
+library(nnet) # regressao logistica multinominal
+library(car) # multicolineariedade
+library(FNN) # KNN
+library(knitr)
+library(tidyverse)
+```
+
+# 1.	Leitura dos dados "Consumo.Jovens.csv" e análise preliminar dos mesmos  
+
+## 1.1) [1 valor] Leitura dos dados; apresentação de dimensão e estrutura dos dados; verificação do número de casos com dados em falta (para todos os atributos); sumário dos dados completos (depois de eliminação dos casos/linhas com dados omissos )
+  
+
+```{r}
+
+#Leitura dos dados (Nota: verifique sep no ficheiro de origem)
+CJ<-read.csv("Consumo.Jovens.csv", header=TRUE, dec=".",na.strings="", sep=";",stringsAsFactors = TRUE)
+
+# apresentação de dimensão e estrutura dos dados.  
+dim(CJ)
+str(CJ)
+
+# Verificação do número de casos com dados em falta (para todos os atributos) 
+na_count <- CJ %>% summarise_all(funs(sum(is.na(.))))
+na_count
+
+# eliminação dos casos/linhas com dados omissos 
+CJ<-na.omit(CJ)
+
+# sumário dos dados completos
+
+summary(CJ)
+
+```
+
+## 1.2) [1.5 valores] Breve análise descritiva de q0, q1, q2 e q3.
+
+```{r}
+#q0: País de residência
+summary(CJ[,1])
+
+
+counts <- table(CJ$q0)
+barplot(counts, main="País de Residência",
+   xlab="País")
+
+#q1: Sexo
+
+summary(CJ[,2])
+q1_counts <- table(CJ$q1)
+
+cores <- terrain.colors(length(q1_counts))
+
+percentagens <- round(q1_counts / sum(q1_counts) * 100, 1)
+
+labels <- c("Feminino", "Masculino")
+etiquetas_percentagens <- paste0(labels, " (", percentagens, "%)")
+
+pie(percentagens, col = cores, labels = rep("", length(labels)), main = "Géneros")
+legend("topright", legend = etiquetas_percentagens, cex = 0.8, fill = cores)
+
+
+
+#q2: Idade
+summary(CJ[,3])
+
+ggplot(CJ, aes(x = "", y = q2)) + geom_boxplot()
+
+#q3: Situação estudantil 
+summary(CJ[,4])
+
+
+q3_counts <- table(CJ$q3)
+
+cores <- terrain.colors(length(q3_counts))
+
+percentagens <- round(q3_counts / sum(q3_counts) * 100, 1)
+
+labels <- c("Estudante-Trabalhador", "Estudante a Tempo Inteiro", "Outra")
+etiquetas_percentagens <- paste0(labels, " (", percentagens, "%)")
+
+pie(percentagens, col = cores, labels = rep("", length(labels)), main = "Géneros")
+legend("topright", legend = etiquetas_percentagens, cex = 0.8, fill = cores)
+
+
+# todas as juntas
+describe(CJ[,1:4])
+```
+
+## 1.3) [1.5 valores] Cálculo (e apresentação) de medidas de associação entre as variáveis: a)  q14a…q14j; b) q0 e as variáveis q19_1…q19_8; c) q10 e q1
+
+```{r}
+Eta_ <- function(y,x){
+ freqk <- as.vector(table(x))
+ l <- nlevels(x)
+ m <- rep(NA,1)
+ qual <- as.numeric(x)
+ for (k in 1:1) {m[k] <- mean(y[qual == k])}
+ return(sqrt(sum(freqk*(m-mean(y))^2)/sum((y-mean(y))^2)))}
+
+#a) q14a…q14j
+# Criando uma matriz com as variáveis q14a...q14j
+matrizq14 <- CJ[,11:20]
+
+# Aplicando a função Eta para cada combinação de variáveis
+medidas_assoc <- apply(matrizq14, 2, function(x) Eta_(CJ$q13a, x))
+
+# Visualizando as medidas de associação
+medidas_assoc
+
+#b) q0 e as variáveis q19_1…q19_8
+
+(a_q0_q19_1 <- cramersV(CJ$q0, CJ$q19_1))
+(a_q0_q19_2 <- cramersV(CJ$q0, CJ$q19_2))
+(a_q0_q19_3 <- cramersV(CJ$q0, CJ$q19_3))
+(a_q0_q19_4 <- cramersV(CJ$q0, CJ$q19_4))
+(a_q0_q19_5 <- cramersV(CJ$q0, CJ$q19_5))
+(a_q0_q19_6 <- cramersV(CJ$q0, CJ$q19_6))
+(a_q0_q19_7 <- cramersV(CJ$q0, CJ$q19_7))
+(a_q0_q19_8 <- cramersV(CJ$q0, CJ$q19_8))
+# c) q10 e q1
+
+cramersV(CJ$q10,CJ$q1) 
+
+```
+
+
+## 1.4) [1 valor] Divisão dos dados em amostra de treino (60%)- CJ.train - e de teste (40%) – CJ.test - usando set.seed(444);apresentação de tabela de frequências relativas de q1 em cada amostra
+
+```{r}
+set.seed(444)
+
+#CJ.train
+C_train <- sample(nrow(CJ),.60*nrow(CJ))
+CJ.train <- CJ[C_train,]
+dim(CJ.train)
+
+
+
+#CJ.test
+CJ.test <- CJ[-C_train,]
+dim(CJ.test)
+
+CJ2 <- table(CJ.test$q1)
+knitr::kable(prop.table(CJ2))
+
+
+```
+
+## 1.5) [1 valor] Completação das frases seguintes:
+Inicialmente, o número de casos omissos na variável q1 era **____5_____**. No conjunto de dados em análise (depois de eliminar os registos com observações omissas) o número de estudantes trabalhadores é igual a **__116_______**. A correlação mais elevada entre o pares de variáveis q14 tem o valor **_0.600735876________**. A correlação maior entre a variável q0 e as variáveis q19_ regista-se para a variável q19_**______3___**
+
+
+# 2. Regressão: utilização do K-Nearest Neighbour para prever q19_8 com base nas variáveis q12b_a , q12b_b, q12b_c, q13a e q13b.
+
+## 2.1) [2 valores] Aprendizagem sobre CJ.train[,c(6:10)] e considerando y=y=CJ.train$q19_8 recorrendo a one-hold-out validation; determinação de um “melhor” valor de K atendendo ao Sum of Squares Error
+
+```{r}
+#Normalizar os conjuntos de treino e teste
+normalize <- function(x) {
+return ((x - min(x)) / (max(x) - min(x)))}
+# training set
+CJ.train_n<-CJ.train
+CJ.train_n [,c(6:10)]<-sapply(CJ.train[,c(6:10)],normalize) # test set
+CJ.test_n<-CJ.test
+CJ.test_n [,c(6:10)]<-sapply(CJ.test[,c(6:10)],normalize)
+# primeiras 6 observações dos dados de teste normalizados
+knitr::kable(head(CJ.test_n, 6)) 
+
+#Selecionar o melhor k
+k.sse<-matrix(NA,25,2)
+for (i in 1:25){
+ knn.CJ_k <- knn.reg(CJ.train_n[,c(6:10)], y=CJ.train_n$q19_8, k=i)
+ k.sse[i,1]<-i
+ k.sse[i,2] <- sse(CJ.train_n$q19_8, knn.CJ_k$pred)
+}
+  
+  
+#R-square plot
+plot(k.sse[,2], type="b", xlab="K Value",ylab="SSE")
+
+(k.sse_sort <- k.sse[order(k.sse[,2],decreasing = FALSE), ])
+
+(best_k <- k.sse_sort[1,1])
+
+```
+## 2.2) [2 valores] Considerando o “melhor” valor de K (v. 2.1), obtenção de estimativas do alvo e listagem dos 6 primeiros valores estimados nos conjuntos CJ.train e CJ.test  
+
+```{r}
+
+# estimativas sobre CJ.test
+knn.CJ1 <- knn.reg(CJ.train_n[,c(6:10)],CJ.test_n[,c(6:10)], y=CJ.train_n$q19_8, k=best_k)
+knn.CJ1
+
+# estimativas sobre CJ train 
+knn.CJ <- knn.reg(CJ.train_n[,c(6:10)], y=CJ.train_n$q19_8, k=best_k)
+knn.CJ
+
+knitr::kable(head(CJ.test_n, 6)) 
+knitr::kable(head(CJ.train_n, 6)) 
+
+head(CJ.test_n$q19_8)
+```
+
+## 2.3) [2 valores] Determinação de Sum of Squares Error e de Root Mean Squared Error (RMSE) correspondentes às estimativas obtidas pelo KNN em 2.2) para as amostras CJ.train e CJ.test
+
+```{r}
+
+# Métricas sobre CJ.train
+
+sse(CJ.train_n$q19_8, knn.CJ$pred)
+rmse(CJ.train_n$q19_8, knn.CJ$pred)
+
+# Métricas sobre CJ.test
+
+sse(CJ.test_n$q19_8, knn.CJ1$pred)
+rmse(CJ.test_n$q19_8, knn.CJ1$pred)
+
+```
+## 2.4) [1 valor] Completação das frases seguintes:
+
+O “melhor” valor de K, para K-NN, obtido segundo validação hold-one-out sobre a amostra de treino é **______22______**;o valor estimado do alvo para a 1ª observação do conjunto de teste é **____3________**;  neste conjunto obtém-se um RMSE de**____1.061664___** e um SSE de **__570.3285_____**. 
+
+
+# 3. Classificação: utilização de uma Árvore para prever q10 (Compra ou não compra produtos de marca) considerando 4 preditores: q12b_a, q13a, q14e e q14i.  
+## 3.1) [2 valores] Construção de uma Árvore de classificação sobre CJ.train efetuando a sua poda de modo a fixar 15 nós folha (para prever q10 com base nos preditores q12b_a, q13a, q14e e q14i) 
+
+```{r}
+ctree_large.cj<-tree(q10~ q12b_a+ q13a+ q14e + q14i,data=CJ.train,
+control=tree.control(nrow(CJ.train), 
+mincut = 1, minsize = 2, mindev = 0.001), split = "deviance")
+
+
+# cost-complexity prunning
+seq_ctree.cj <- prune.tree(ctree_large.cj)
+plot(seq_ctree.cj$size, seq_ctree.cj$dev, pch=20)
+lines(seq_ctree.cj$size, seq_ctree.cj$dev, col="red")
+
+ctree_large.cj<-prune.tree(ctree_large.cj, best=15 )
+summary(ctree_large.cj)
+
+```
+## 3.2) [2 valores] Representações da Árvore de Classificação: a) Lista indentada; b) Gráfico da Árvore 
+
+```{r}
+# a)
+
+print(ctree_large.cj)
+
+# b)
+plot(ctree_large.cj, type="uniform")
+text(ctree_large.cj,pretty =0,cex=0.8)
+title(main = "Prunned Classification Tree for q10")
+
+
+```
+
+## 3.3) [2 valores] Obtenção, sobre as amostras CJ.train e CJ.test, das "Matrizes de Confusão" e correspondentes medidas Accuracy associadas à Árvore de Classificação 
+
+```{r}
+
+# "Matriz de confusão" e accuracy sobre CJ.train
+pred.ctree <- predict(ctree_large.cj, CJ.train,type="class")
+(confusion_mat <- table(CJ.train$q10, pred.ctree))
+
+#Accuracy
+(accuracy<-sum(diag(confusion_mat))/sum(confusion_mat))
+
+
+# "Matriz de confusão"e accuracy sobre CJ.test
+
+pred.ctree1 <- predict(ctree_large.cj, CJ.test,type="class")
+(confusion_mat1 <- table(CJ.test$q10, pred.ctree1))
+
+#Accuracy
+(accuracy1<-sum(diag(confusion_mat1))/sum(confusion_mat1))
+
+```
+
+## 3.4) [1 valor] Completação das frases seguintes:
+
+A árvore obtida, classifica as observações do nó folha 73) na classe **___Não__**; o nó folha com o maior número de observações de treino é o nó **___14__**; no conjunto de teste o número de observações corretamente classificadas nas classes "Não" e "Sim" é **__158___** e **__203___**. respetivamente.
