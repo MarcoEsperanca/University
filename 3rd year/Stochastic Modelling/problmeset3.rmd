@@ -1,0 +1,74 @@
+---
+title: "Problem Solved 3"
+author: "Allan Kardec"
+date: "2023-10-12"
+output:
+  prettydoc::html_pretty:
+    df_print: paged
+    theme: cayman
+    highlight: github
+---
+
+
+```{r}
+library(simmer)
+library(magrittr)
+library("simmer.plot")
+library(cli)
+library(htmltools)
+
+```
+
+
+
+```{r}
+set.seed(2121)
+
+
+caminho <- trajectory("Paciente Fila de espera") %>% 
+            select(c("mensagem","chamada"), policy = "shortest-queue") %>%
+            seize_selected() %>%
+            release_selected() %>%
+            seize("atendente") %>%
+            timeout(function() rnorm(1,4,1)) %>%
+            release("atendente")
+      
+
+        
+
+
+```
+
+```{r}
+
+h_t <- schedule(c(8,18), c(Inf,0), period = 18)
+
+operaaa <- simmer("Problem3") %>% 
+        add_resource("atendente",2 , capacity = h_t, ) %>%
+        add_resource("mensagem") %>%
+        add_resource("chamada") %>%
+        add_generator("paciente",caminho, function() rexp(1,40)) %>%
+        run(24)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

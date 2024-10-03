@@ -1,0 +1,520 @@
+---
+title: "Modelação Estocástica Problem Set 1"
+subtitle: "Resolução"
+author: 
+  CDC1
+  | Marco Delgado Esperança 110451
+  | Umeima Adam Mahomed 99239
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+---
+
+\onehalfspacing
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warnings = FALSE, echo = FALSE}
+suppressWarnings(
+rm(list=ls(all=TRUE)),
+library(dplyr)
+)
+library(ggplot2)
+```
+
+
+#### **1. Pretende-se que gere 10.000 números pseudo-aleatórios provenientes da distribuição triangular:**
+
+##### **(a)** Recorra ao método da aceitação-rejeição.
+
+##### **(b)** Crie uma função de raiz para definir a distribuição triangular. 
+
+Note que a distribuição triangular é definida por três parâmetros: min, o vértice inferior esquerdo do triângulo, max, o vértice inferior direito, e mode, o vértice superior. 
+
+A escolha de valores para os parâmetros é discricionária.
+
+##### **(c)** Os resultados devem ser apresentados em matrix ou data.frame, para além de um output gráfico simples que permita visualizar a densidade aproximada dos números simulados.
+
+****
+
+##### **Definição das funções a utilizar daqui em diante para a pergunta 1:**
+
+```{r}
+
+triangular_density <- function(x, min, max, mode) {
+  ifelse(x < min | x > max, 0,
+         ifelse(x <= mode, 2 * (x - min) / ((max - min) * (mode - min)),
+                2 * (max - x) / ((max - min) * (max - mode))))
+}
+
+```
+
+```{r}
+
+gerar_triangular <- function(n, min, max, mode) {
+  x <- numeric(n)
+  i <- 1
+  while (i <= n) {
+    x_candidate <- runif(1, min, max)
+    y_candidate <- runif(1, 0, 1)
+    if (y_candidate <= triangular_density(x_candidate, min, max, mode)) {
+      x[i] <- x_candidate
+      i <- i + 1
+    }
+  }
+  return(x)
+}
+
+```
+
+```{r, echo = FALSE} 
+
+
+# Passo extra
+
+gerar_demonstracao <- function(n, min, max, mode) {
+  x <- numeric(n)
+  accepted <- logical(n)
+  y <- numeric(n)
+  i <- 1
+  while (i <= n) {
+    x_candidate <- runif(1, min, max)
+    y_candidate <- runif(1, 0, 1)
+    c_aux <-
+      triangular_density(mode, min, max, mode) / dunif(mode, min, max)
+    if (y_candidate <= triangular_density(x_candidate, min, max, mode) /
+        (c_aux * dunif(x_candidate, min, max))) {
+      x[i] <- x_candidate
+      y[i] <- y_candidate
+      accepted[i] <- TRUE
+      i <- i + 1
+    }
+    else {
+      x[i] <- x_candidate
+      y[i] <- y_candidate
+      accepted[i] <- FALSE
+      i <- i + 1
+    }
+    
+  }
+  data.frame(x, y, accepted)
+}
+
+```
+
+
+##### **Aplicação Exemplo 1 para os parâmetros: min: 2, max: 10 e moda: 3**
+
+```{r Exemplo 1}
+# EXEMPLO 1:
+set.seed(2023)
+
+min_valor <- 2
+max_valor <- 10
+mode_valor <- 3
+
+amostra <- gerar_triangular(10000, min_valor, max_valor, mode_valor)
+
+resultado_1 <- data.frame(Valor = amostra)
+
+# resultado_1 # descomentar se se pretender ver o dataframe
+
+```
+
+##### **Visualização dos resultados obtidos** 
+
+```{r, echo = FALSE}
+hist_simp_1 = hist(amostra, xlab = "Valor", ylab = "Frequência", main = "Histograma dos NPA para a distribuição triangular")
+
+pontos_1 <- data.frame(x = c(min_valor, mode_valor, max_valor), y = c(0, max(hist_simp_1$counts), 0))
+
+hist_1 = ggplot(resultado_1, aes(x = Valor)) +
+  geom_histogram(binwidth = 0.5, fill = "#1aa0ed", color = "black", alpha = 1) +
+  geom_line(data = pontos_1, aes(x = x, y = y), color = "red", alpha = 1) +
+  geom_ribbon(data = pontos_1, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.3) +
+  labs(title = "Histograma da Distribuição Triangular", x = "Valor", y = "Frequência") +
+  theme_minimal()
+
+hist_extra <- ggplot(resultado_1, aes(x = Valor)) +
+  geom_density() +
+  labs(title = "Distribuição Triangular",
+       x = "Valor",
+       y = "Densidade")
+
+hist_1
+
+hist_extra
+
+```
+
+##### **Demonstração de uma visualização de uma parte dos dados que facilita a perceção do algoritmo para exemplo 1**
+
+```{r, echo = FALSE}
+# Parametros do exemplo 1
+min_valor <- 2
+
+max_valor <- 10
+
+mode_valor <- 3
+
+set.seed(2023)
+
+sample_data <- gerar_demonstracao(10000, min_valor, max_valor, mode_valor)
+
+ggplot(sample_data) +
+  geom_point(aes(x = x, y=y, color = accepted), size = 0.2,alpha = 0.5) +
+  scale_fill_manual(values = c("FALSE" = "red", "TRUE" = "green")) +
+  labs(
+    title = "Triangular Distribution Overlay with Highlighted Accepted Points",
+    x = "Value",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+```
+
+##### **Aplicação Exemplo 2 para os parâmetros: min: 0, max: 10 e moda: 5**
+
+```{r Exemplo 2}
+# EXEMPLO 2:
+set.seed(2023)
+
+min_valor <- 0
+
+max_valor <- 10
+
+mode_valor <- 5
+
+amostra <- gerar_triangular(10000, min_valor, max_valor, mode_valor)
+
+resultado_2 <- data.frame(Valor = amostra)
+
+# resultado_2 # descomentar se se pretender ver o dataframe
+
+```
+
+##### **Visualização dos resultados obtidos** 
+
+```{r, echo = FALSE}
+hist_simp_2 = hist(amostra, xlab = "Valor", ylab = "Frequência", main = "Histograma dos NPA para a distribuição triangular")
+
+pontos_2 <- data.frame(x = c(min_valor, mode_valor, max_valor), y = c(0, max(hist_simp_2$counts), 0))
+
+hist_2 = ggplot(resultado_2, aes(x = Valor)) +
+  geom_histogram(binwidth = 0.5, fill = "#1aa0ed", color = "black", alpha = 1) +
+  geom_line(data = pontos_2, aes(x = x, y = y), color = "red", alpha = 1) +
+  geom_ribbon(data = pontos_2, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.3) +
+  labs(title = "Histograma da Distribuição Triangular", x = "Valor", y = "Frequência") +
+  theme_minimal()
+
+hist_2_extra <- ggplot(resultado_2, aes(x = Valor)) +
+  geom_density() +
+  labs(title = "Distribuição Triangular",
+       x = "Valor",
+       y = "Densidade")
+
+hist_2
+
+hist_2_extra
+
+```
+
+##### **Demonstração de uma visualização de uma parte dos dados que facilita a perceção do algoritmo para o exemplo 2**
+
+```{r, echo = FALSE}
+# Parametros do exemplo 1
+min_valor <- 0
+
+max_valor <- 10
+
+mode_valor <- 5
+
+set.seed(2023)
+sample_data <- gerar_demonstracao(10000, min_valor, max_valor, mode_valor)
+
+ggplot(sample_data) +
+ # geom_density(alpha = 0.5) +
+  geom_point(aes(x = x, y=y, color = accepted), size = 0.2,alpha = 0.5) +
+  scale_fill_manual(values = c("FALSE" = "red", "TRUE" = "green")) +
+  labs(
+    title = "Triangular Distribution Overlay with Highlighted Accepted Points",
+    x = "Value",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+```
+
+##### **Aplicação Exemplo 3 para os parâmetros: min: 5, max: 10 e moda: 8**
+
+```{r Exemplo 3}
+# EXEMPLO 3:
+set.seed(2023)
+
+min_valor <- 5
+
+max_valor <- 10
+
+mode_valor <- 8
+
+amostra <- gerar_triangular(10000, min_valor, max_valor, mode_valor)
+
+resultado_3 <- data.frame(Valor = amostra)
+
+#resultado_3 # descomentar se se pretender ver o dataframe
+
+```
+
+##### **Visualização dos resultados obtidos** 
+
+```{r, echo = FALSE}
+hist_simp_3 = hist(amostra, xlab = "Valor", ylab = "Frequência", main = "Histograma dos NPA para a distribuição triangular")
+
+pontos_3 <- data.frame(x = c(min_valor, mode_valor, max_valor), y = c(0, max(hist_simp_3$counts), 0))
+
+hist_3 = ggplot(resultado_3, aes(x = Valor)) +
+  geom_histogram(binwidth = 0.5, fill = "#1aa0ed", color = "black", alpha = 1) +
+  geom_line(data = pontos_3, aes(x = x, y = y), color = "red", alpha = 1) +
+  geom_ribbon(data = pontos_3, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.3) +
+  labs(title = "Histograma da Distribuição Triangular", x = "Valor", y = "Frequência") +
+  theme_minimal()
+
+hist_3_extra <-ggplot(resultado_3, aes(x = Valor)) +
+  geom_density() +
+  labs(title = "Distribuição Triangular",
+       x = "Valor",
+       y = "Densidade")
+
+hist_3
+
+hist_3_extra
+```
+
+##### **Demonstração de uma visualização de uma parte dos dados que facilita a perceção do algoritmo para exemplo 3**
+
+```{r, echo = FALSE}
+# Parametros do exemplo 1
+min_valor <- 5
+
+max_valor <- 10
+
+mode_valor <- 8
+
+set.seed(2023)
+sample_data <- gerar_demonstracao(10000, min_valor, max_valor, mode_valor)
+
+ggplot(sample_data) +
+ # geom_density(alpha = 0.5) +
+  geom_point(aes(x = x, y=y, color = accepted), size = 0.2,alpha = 0.5) +
+  scale_fill_manual(values = c("FALSE" = "red", "TRUE" = "green")) +
+  labs(
+    title = "Triangular Distribution Overlay with Highlighted Accepted Points",
+    x = "Value",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+# Junção das três distribuições triangulares geradas
+dataf_triangulos <- cbind(resultado_1 , resultado_2, resultado_3)
+
+colnames(dataf_triangulos) <- c("Exemplo 1", "Exemplo 2", "Exemplo 3")
+
+#dataf_triangulos # descomentar se se pretender ver o dataframe
+```
+
+#### **2. Pretende-se que realize um estudo comparativo de dois estimadores para o coeficiente de assimetria de distribuições de probabilidade.**
+
+#### **Considere os estimadores s1 e s2 para a assimetria de uma população qualquer:**
+
+$$ s_1 = \frac {Q_3 + Q_1 − 2Q_2}{Q_3 − Q_1}$$   $$  s_2 =  \frac {(µ − ν)}{ E(|X − ν|) }$$
+
+#### **em que, na Equação 1, Qi representa o quartil respectivo e, na Equação 2, µ corresponde à média e ν corresponde à mediana.**
+
+##### **(a)** Gere, utilizando o gerador base do R para a distribuição t-student (rt()), e com set.seed(2023):
+  **i.** 100 amostras de dimensão n = 20
+  
+  **ii.** 100 amostras de dimensão n = 100
+  
+  **iii.** 100 amostras de dimensão n = 1000
+
+##### **(b)** Obtenha, para cada amostra gerada e para cada estimador, a assimetria amostral (estimativa) correspondente.
+
+##### **(c)** Recorrendo ao cálculo do erro-padrão e do erro quadrático médio, conclua pela sua preferência por um dos estimadores e comente o seu comportamento, em função da dimensão das amostras obtidas. Apresente os resultados num data.frame.
+
+****
+
+##### **Definições dos estimadores**
+
+```{r}
+# Definir a seed
+set.seed(2023)
+
+# Definir os tamanhos das amostras
+tamanhos <- c(n = 20, n = 100, n = 1000)
+
+# Definir as funções dos estimadores
+calcular_s1 <- function(amostra) {
+  
+  q1 <- quantile(amostra, 0.25)
+  
+  q2 <- median(amostra)
+  
+  q3 <- quantile(amostra, 0.75)
+  
+  return ((q3 + q1 - 2*q2) / (q3 - q1))
+}
+
+calcular_s2 <- function(amostra) {
+  
+  media <- mean(amostra)
+  
+  mediana <- median(amostra)
+  
+  abs_diff <- abs(amostra - mediana)
+  
+  return ((media - mediana) / mean(abs_diff))
+}
+
+```
+
+##### **Aplicação dos estimadores**
+
+```{r}
+# Criar listas para armazenar os resultados
+resultados_s1 <- list()
+
+resultados_s2 <- list()
+
+erros <- list()
+
+eficiencias <- list()
+
+# Loop pelos tamanhos de amostra
+
+for (n in tamanhos) {
+  
+  amostras <- replicate(100, rt(n = n, df = 5))
+  
+  assimetrias_estimador_1 <- (apply(amostras, 2, calcular_s1))
+  
+  assimetrias_estimador_2 <- (apply(amostras, 2, calcular_s2))
+  
+  erro_padrao_1 <- sd(assimetrias_estimador_1)
+  
+  erro_padrao_2 <- sd(assimetrias_estimador_2)
+  
+  erro_quad_1 <- mean(erro_padrao_1^2)
+  
+  erro_quad_2 <- mean(erro_padrao_2^2)
+  
+  resultados_s1[[as.character(n)]] <- assimetrias_estimador_1
+  
+  resultados_s2[[as.character(n)]] <- assimetrias_estimador_2
+  
+  erros[[as.character(n)]] <- data.frame(
+
+    estimador = "s1",
+    
+    erro_padrao = erro_padrao_1,
+    
+    erro_quadrático_médio = erro_quad_1,
+    
+    estimador = "s2",
+    
+    erro_padrao = erro_padrao_2,
+    
+    erro_quadrático_médio = erro_quad_2
+  )
+  
+  # calcula as eficiências de cada estimador para cada n amostra
+  eficiencias[[as.character(n)]] <- data.frame(eficiencia = erro_quad_2 / erro_quad_1 
+  )
+}
+
+erros
+
+eficiencias 
+
+```
+
+**Nota:** Considerou-se 5 graus de liberdade para a t de student de forma que, a comparação entre os estimadores S1 e S2 e as suas *n* amostras, seria mais facilitada. 
+Além disso, conforme apontado, dado que se pretendia uma t de student, se os graus de liberdade fossem >30, haveria uma aproximação a uma normal, o que iria dificultar a comparação entre as métricas para cada estimador e *n* amostras sendo que alguns valores teriam de ser interpretados com esse fator em consideração.  
+
+Também foi feita uma experiência onde os graus de liberdade = n, ou seja, dependendo do *n* da amostra, os graus iriam diferir inter-amostra, onde foi observado que não exitia uma grande diferença entre os valores das métricas e os valores das métricas apresentados acima, tendo assim levado à decisão de deixar um valor constante (df = 5).
+
+
+```{r}
+# transformar os vetores para dataframes 
+
+dataf1 <- data.frame("20" = resultados_s1$`20`, "100" = resultados_s1$`100`, "1000" = resultados_s1$`1000`) # para estimador S1
+
+dataf2 <- data.frame("20" = resultados_s2$`20`, "100" = resultados_s2$`100`, "1000" = resultados_s2$`1000`) # para estimador S2
+
+colnames(dataf1) <- colnames(dataf2) <- c("Amostra: 20", "Amostra: 100", "Amostra: 1000" )
+
+#dataf1 # descomentar se se pretender ver o dataframe
+
+#dataf2 # descomentar se se pretender ver o dataframe
+```
+
+##### **Box plots para cada estimador e n amostras**
+
+```{r, echo = FALSE}
+# Criar boxplots para cada dataframe com os resultados de cada estimador 
+boxplot(dataf1, main="Box Plot Estimador 1", ylab="Valores", col="lightblue", border="navy")
+
+boxplot(dataf2, main="Box Plot Estimador 2", ylab="Valores", col="lightblue", border="navy")
+ 
+```
+
+##### **Gráficos para o estimador 1**
+
+```{r, echo = FALSE}
+# Gráfico para o Estimador 1 : Amostras de 20
+par(mfrow = c(1, 1), mar = c(5, 5, 2, 2))  
+
+plot(dataf1$'Amostra: 20', type = "l", xlab = "100 Amostras de 20", ylab = "Estimador 1", main = "100 amostras de 20 para o estimador 1")
+
+# Gráfico para o Estimador 1 : Amostras de 100
+par(mfrow = c(1, 1), mar = c(5, 5, 2, 2)) 
+
+plot(dataf1$'Amostra: 100', type = "l", xlab = "100 Amostras de 100", ylab = "Estimador 1", main = "100 amostras de 100 para o estimador 1")
+
+# Gráfico para o Estimador 1 : Amostras de 1000
+par(mfrow = c(1, 1), mar = c(5, 5, 2, 2))  
+
+plot(dataf1$'Amostra: 1000', type = "l", xlab = "100 Amostras de 1000", ylab = "Estimador 1", main = "100 amostras de 1000 para o estimador 1")
+
+```
+
+##### **Gráficos para o estimador 2**
+
+```{r, echo = FALSE}
+# Gráfico para o Estimador 2 : Amostras de 20
+par(mfrow = c(1, 1), mar = c(5, 5, 2, 2)) 
+
+plot(dataf2$'Amostra: 20', type = "l", xlab = "100 Amostras de 20", ylab = "Estimador 2", main = "100 amostras de 20 para o estimador 2")
+
+# Gráfico para o Estimador 2 : Amostras de 100
+par(mfrow = c(1, 1), mar = c(5, 5, 2, 2))  
+
+plot(dataf2$'Amostra: 100', type = "l", xlab = "100 Amostras de 100", ylab = "Estimador 2", main = "100 amostras de 100 para o estimador 2")
+
+# Gráfico para o Estimador 2 : Amostras de 1000
+par(mfrow = c(1, 1), mar = c(5, 5, 2, 2))  
+
+plot(dataf2$'Amostra: 1000', type = "l", xlab = "100 Amostras de 1000", ylab = "Estimador 2", main = "100 amostras de 1000 para o estimador 2")
+
+```
+
+
+Com o que foi apresentado acima consegue-se obter uma melhor visualização da dispersão dos dados e perceber o comportamento dos dois estimadores em relação aos seus quartis. 
+
+
