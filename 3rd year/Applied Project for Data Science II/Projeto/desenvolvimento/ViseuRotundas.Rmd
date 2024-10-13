@@ -1,0 +1,626 @@
+---
+title: "viseuRua"
+output: html_notebook
+date: "2023-11-14"
+---
+
+```{r}
+viseu <- here("data", "cleaned_all_lat_long", "acidentes.parquet") %>% 
+  arrow::read_parquet() %>% 
+  filter(distrito == "Viseu")
+viseu 
+```
+
+
+
+```{r}
+df_condutores <- here("data", "cleaned_all_lat_long", "condutores.parquet") %>%
+  arrow::read_parquet() %>% 
+  filter(idAcidente %in% viseu$idAcidente)
+df_passageiros <- here("data", "cleaned_all_lat_long", "passageiros.parquet") %>%
+  arrow::read_parquet() %>% 
+  filter(idAcidente %in% viseu$idAcidente)
+df_peoes <- here("data", "cleaned_all_lat_long", "peoes.parquet") %>% 
+  arrow::read_parquet() %>% 
+  filter(idAcidente %in% viseu$idAcidente)
+list(df_condutores, df_passageiros, df_peoes) 
+```
+
+
+```{r eval=FALSE, include=FALSE}
+#TODO subject to removal
+
+library(leaflet)
+library(leaflet.extras)
+library(sp)
+
+# Supondo que seu dataframe seja chamado viseu
+viseu_clean <- viseu
+
+# Remova linhas com valores nulos nas colunas de coordenadas
+viseu_clean <- viseu_clean[!(is.na(viseu_clean$`Longitude`) | is.na(viseu_clean$`Latitude`)), ]
+
+# Substitua vírgulas por pontos nas colunas de coordenadas
+viseu_clean$`Longitude GPS` <- as.numeric(gsub(",", ".", viseu_clean$`Longitude`))
+viseu_clean$`Latitude GPS` <- as.numeric(gsub(",", ".", viseu_clean$`Latitude`))
+
+# Defina limites para Portugal
+limite_lat <- c(36.9, 42.2)  # Latitude mínima e máxima
+limite_lon <- c(-9.6, -6.2)  # Longitude mínima e máxima
+
+# Filtre as linhas fora dos limites
+viseu_clean <- viseu_clean[viseu_clean$`Latitude GPS` >= limite_lat[1] & viseu_clean$`Latitude` <= limite_lat[2], ]
+viseu_clean <- viseu_clean[viseu_clean$`Longitude GPS` >= limite_lon[1] & viseu_clean$`Longitude` <= limite_lon[2], ]
+
+# Crie o objeto SpatialPointsDataFrame
+coords <- cbind(viseu_clean$`Longitude GPS`, viseu_clean$`Latitude`)
+rownames(coords) <- rownames(viseu_clean)
+spatial_data <- SpatialPointsDataFrame(coords, data = viseu_clean)
+
+# Crie o mapa com o heatmap
+m <- leaflet() %>%
+  addTiles() %>%
+  addHeatmap(data = spatial_data, radius = 10)
+
+m
+
+# Rua Couto de Manhete
+```
+
+
+```{r}
+columns_with_na <- colSums(is.na(viseu))
+
+columns_with_na <- columns_with_na[columns_with_na > 0]
+
+names(columns_with_na)
+```
+
+```{r}
+library(janitor)
+df_condutores
+```
+
+```{r}
+df_condutores %>% 
+  tabyl(grupo_etario) 
+
+df_condutores %>% 
+  tabyl(grupo_etario) %>% 
+  tibble() %>% 
+  mutate(cumPercent = cumsum(percent)) %>% 
+  ggplot(aes(x = grupo_etario, y = 100*cumPercent)) +
+  geom_col() +
+  # divide into 3
+  geom_hline(yintercept = 33, linetype = "dashed") +
+  geom_hline(yintercept = 66, linetype = "dashed") +
+  labs(x = "Grupo Etário", y = "Percentagem (%)", title = "Percentagem de Condutores por Grupo Etário") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+```{r}
+df_condutores %>% filter(grupo_etario %>% is.na)
+```
+```{r}
+df_condutores %>% 
+  select(idAcidente, grupo_etario) %>% 
+  mutate(grupo_etario = fct_collapse(grupo_etario %>% fct_na_value_to_level(), #é literalmente só 1
+    `< 29` = c(NA_character_, "< 5", "6 - 9", "10 - 14", "15 - 17", "18 - 20", "21 - 24", "25 - 29"),
+    `30 - 49` = c("30 - 34", "35 - 39", "40 - 44", "45 - 49"),
+    `> 50` = c("50 - 54", "55 - 59", "60 - 64", "65 - 69", "70 - 74", "> 75")
+  )) -> idade_dos_condutores
+
+idade_dos_condutores %>% tabyl(grupo_etario)
+```
+
+
+```{r}
+df_condutores %>% tabyl(categoriaVeiculo)
+# binaria
+```
+
+
+
+```{r}
+df_condutores %>% janitor::tabyl(acao_infoComplementar, idCondutor)
+```
+
+
+```{r}
+# melhor n
+df_condutores %>% tabyl(tempoConducao)
+```
+
+
+```{r}
+viseu$nMortos %>%tabyl()
+```
+mt poucos mortos
+
+```{r}
+viseu$nFeridosGraves %>% tabyl()
+```
+mt poucos feridos graves
+```{r}
+viseu$nFeridosLigeiros %>% tabyl()
+```
+mts feridos ligeris
+acho q o melhor e juntar os tres com sum
+
+```{r}
+df_passageiros %>% nrow()
+df_passageiros %>% nrow() / viseu %>% nrow()
+```
+há pouquinhos
+
+```{r}
+df_peoes %>% nrow()
+df_peoes %>% nrow() / viseu %>% nrow()
+df_peoes
+```
+mt menos
+```{r}
+viseu %>% 
+  mutate(oqueaconteceu_geral = fcase(
+    oqaconteceu %>% str_starts("Despiste"), "Despiste",
+    oqaconteceu %>% str_starts("Colisão"), "Colisão",
+    oqaconteceu %>% str_starts("Atropelamento"), "Atropelamento"
+  ) %>% as.factor()) %>% 
+  tabyl(oqueaconteceu_geral)
+
+```
+
+sao poucos atropelamentos mas e melhor ter na mesma
+
+
+```{r}
+viseu %>% tabyl(DiaSemana)
+```
+cmo esta
+
+```{r}
+seconds_passed_since_midnight <- function(datetime) {
+  as.numeric(difftime(datetime, floor_date(datetime, "day"), units = "secs"))
+}
+
+percentage_of_year_passed <- function(datetime) {
+  as.numeric(difftime(datetime, floor_date(datetime, "year"), units = "secs")) / as.numeric(difftime(ceiling_date(datetime, "year"), floor_date(datetime, "year"), units = "secs"))
+}
+
+# https://stats.stackexchange.com/questions/311494/best-practice-for-encoding-datetime-in-machine-learning
+# https://feature-engine.trainindata.com/en/latest/api_doc/creation/CyclicalFeatures.html
+two_pi_over_max_percentage_year <- (2 * pi) / 1
+two_pi_over_max_seconds <- (2 * pi) / (24*60*60)
+conflicts_prefer(lubridate::hour)
+viseu %>% 
+  mutate(percentage_year = percentage_of_year_passed(datetime), seconds = seconds_passed_since_midnight(datetime), hour = hour(datetime)) %>% 
+  select(idAcidente, percentage_year, seconds, hour) %>% 
+  mutate(
+    sin_percentage_year = sin(percentage_year * two_pi_over_max_percentage_year), 
+    cos_percentage_year = cos(percentage_year * two_pi_over_max_percentage_year), 
+    sin_seconds = sin(seconds * two_pi_over_max_seconds), 
+    cos_seconds = cos(seconds * two_pi_over_max_seconds)
+  ) -> cossen
+cossen
+cossen %>% ggplot(aes(x = cos_percentage_year, y = sin_percentage_year)) + 
+  geom_point()
+  
+cossen %>% ggplot(aes(x = cos_seconds, y = sin_seconds , color = hour)) + 
+  geom_point() +
+  scale_color_viridis_c()
+# dps podemos fazer clustering disto e ver se ha alguma coisa https://datascience.stackexchange.com/questions/5990/what-is-a-good-way-to-transform-cyclic-ordinal-attributes
+```
+
+
+```{r}
+viseu %>% tabyl(condEstradaLumped)
+
+```
+n sei (marco salvador)
+
+
+
+
+```{r}
+viseu %>% tabyl(inclinacao)
+```
+n sei (marco salvador)
+
+
+```{r}
+viseu %>% tabyl(recta_curva)
+```
+importante porque indica se e na rotunda ou a sair (ou a entrar kinda)
+
+```{r}
+viseu %>% tabyl(tipoVia)
+```
+binaria
+
+```{r}
+viseu %>% tabyl(estadoEstrada)
+```
+caga
+
+```{r}
+viseu %>% tabyl(localOuNao)
+viseu %>% tabyl(localOuNao, tipoVia) %>% tibble()
+```
+nao importa tmb
+
+
+```{r}
+viseu %>% tabyl(condEstrada)
+```
+melhor lumpar
+
+O resto e latitude e longitude q e melhor nao usar pra primeiro grupos
+
+```{r}
+# pre join to main
+n_feridos <- df_passageiros %>% 
+  group_by(idAcidente) %>%
+  summarise(n_feridos = n()) %>%
+  full_join(df_peoes %>%
+              group_by(idAcidente) %>%
+              summarise(n_feridos = n()), by = "idAcidente") %>%
+  mutate(n_feridos = coalesce(n_feridos.x, 0) + coalesce(n_feridos.y, 0)) %>%
+  select(-n_feridos.x, -n_feridos.y) %>%
+  full_join(df_condutores %>%
+              filter(lesaoCondutor != "Ileso") %>%
+              group_by(idAcidente) %>%
+              summarise(n_feridos = n()), by = "idAcidente") %>%
+  mutate(n_feridos = coalesce(n_feridos.x, 0) + coalesce(n_feridos.y, 0)) %>%
+  select(idAcidente, n_feridos)
+
+acoes_do_condutor_culpado <- df_condutores %>% 
+  select(idAcidente, acao_infoComplementar) %>% 
+  mutate(acao_infoComplementar = if_else(acao_infoComplementar == "Não identificada", NA, acao_infoComplementar)) %>% 
+  group_by(idAcidente) %>%
+  summarise(acao_infoComplementar = dplyr::first(acao_infoComplementar, na_rm = TRUE)) %>%
+  # remove NA
+  filter(!is.na(acao_infoComplementar)) %>% 
+  rename(acao_do_condutor_culpado = acao_infoComplementar)
+
+
+# TODO n sei se e melhor so TRUE ou o count, vou deixar o count
+# Marco salvame
+idade_dos_condutores %>% 
+  fastDummies::dummy_cols(select_columns = "grupo_etario") %>% 
+  group_by(idAcidente) %>% 
+  summarise(`< 29` = sum(`grupo_etario_< 29`), `30-59` = sum(`grupo_etario_30 - 49`), `> 60` = sum(`grupo_etario_> 50`)) -> idade_dos_condutores_summarised
+
+```
+
+```{r}
+viseu %>% 
+  # gerenalizacao doqaconteceu
+  mutate(oqueaconteceu_geral = fcase(
+    oqaconteceu %>% str_starts("Despiste"), "Despiste",
+    oqaconteceu %>% str_starts("Colisão"), "Colisão",
+    oqaconteceu %>% str_starts("Atropelamento"), "Atropelamento"
+  ) %>% as.factor()) %>% 
+  # n_feridos
+  left_join(n_feridos, by = "idAcidente") %>%
+  mutate(n_feridos = coalesce(n_feridos, 0)) %>%
+  # acao do condutor culpado TODO verificar esta variavel
+  left_join(acoes_do_condutor_culpado, by = "idAcidente") %>%
+  # idade dos condutores
+  left_join(idade_dos_condutores_summarised, by = "idAcidente") %>%
+  mutate(
+    `Condutores < 29` = coalesce(`< 29`, 0),
+    `Condutores 30-59` = coalesce(`30-59`, 0),
+    `Condutores > 60` = coalesce(`> 60`, 0)
+  ) %>%
+  # se havia passageiros
+  mutate(havia_passeiros = idAcidente %in% df_passageiros$idAcidente) %>%
+  # altura do dia e do ano
+  left_join(cossen %>% select(idAcidente, sin_percentage_year, cos_percentage_year, sin_seconds, cos_seconds), by = "idAcidente") %>%
+  # condEstrada
+  mutate(condEstradaLumped = fct_lump(condEstrada %>% fct_na_value_to_level, n = 1)) %>%
+  # vars de perfil
+  mutate(perfil = tibble(idAcidente, Latitude, Longitude, distrito, concelho, GNR_PSP, datetime)) %>% 
+  # selecao final
+  select(
+    oqueaconteceu_geral, condAtmosferica, luminosidade, n_feridos,
+    acao_do_condutor_culpado, `Condutores < 29`, `Condutores 30-59`, `Condutores > 60`,
+    havia_passeiros, DiaSemana, sin_percentage_year, cos_percentage_year, sin_seconds, cos_seconds,
+    condEstradaLumped, isCapital,
+    perfil
+  ) -> dados_completos
+dados_completos
+dados_completos %>% select(-perfil) %>% skimr::skim()
+# acao_do_condutor_culpado tem demasiados NAs IMO
+
+dados_completos %<>% select(-acao_do_condutor_culpado)
+
+```
+
+TODO dps ver importancia https://link.springer.com/article/10.1007/s00180-018-0857-0 e qualidade https://repositorio.iscte-iul.pt/handle/10071/5546
+
+```{r}
+if (T) {
+  svg(here("Graficos", "graficos_dados.svg"), height = 30, width = 60)
+  GGally::ggpairs(dados_completos %>% select(-perfil)) + theme_bw() -> g
+  print(g)
+  dev.off()
+}
+```
+
+
+https://www.r-bloggers.com/2016/06/clustering-mixed-data-types-in-r/
+```{r}
+library(cluster)
+dados_completos %>% 
+  select(-perfil) %>% 
+  cluster::daisy(metric = "gower") -> dist_matrix
+" "
+dist_matrix %>% summary
+```
+
+```{r}
+hcluster_D2 <- hclust(dist_matrix, method = "ward.D2")
+hcluster_D2 %>% plot(cex = 0.6, hang = -1, labels = FALSE)
+rect.hclust(hcluster_D2, k = 3, border = "red")
+```
+
+```{r}
+hcluster_complete <- hclust(dist_matrix, method = "complete")
+hcluster_complete %>% plot(cex = 0.6, hang = -1, labels = FALSE)
+rect.hclust(hcluster_complete, k = 4, border = "red")
+```
+
+```{r}
+grupos.hclust_complete <- cutree(hcluster_complete, k = 4)
+grupos.hclust_complete %>% table
+
+grupos.hclust_D2 <- cutree(hcluster_D2, k = 3)
+grupos.hclust_D2 %>% table
+
+plot(silhouette(grupos.hclust_complete, dist_matrix))
+plot(silhouette(grupos.hclust_D2, dist_matrix)) 
+# n me lembro cmo interpretar
+
+
+```
+
+Vamos usar pam pq sim
+```{r}
+sil_width <- c(NA)
+
+
+for(i in 2:10) {
+  pam_fit <- pam(dist_matrix, diss = TRUE, k = i)
+  sil_width[i] <- pam_fit$silinfo$avg.width
+}
+
+plot(1:10, sil_width,
+     xlab = "Number of clusters",
+     ylab = "Silhouette Width")
+lines(1:10, sil_width)
+```
+
+4 clusters ent
+
+```{r}
+pam_fit <- pam(dist_matrix, diss = TRUE, k = 4)
+dados_completos_c <- dados_completos %>%
+  mutate(cluster = as_factor(pam_fit$clustering))
+
+dados_completos_c %>% tabyl(cluster)
+```
+
+```{r}
+pam_fit$medoids
+```
+
+
+```{r}
+table(dados_completos_c$cluster, dados_completos_c$perfil$GNR_PSP)
+```
+
+```{r}
+pak::pak("ropensci/rnaturalearthhires")
+library(rnaturalearth)
+portugal <- ne_states(country = "portugal", returnclass = "sf")
+portugal %>%
+  ggplot() +
+  geom_sf() +
+  geom_point(data = dados_completos_c, alpha = 1, size = 1, aes(x = perfil$Longitude, y = perfil$Latitude, color = cluster)) +
+  coord_sf(, xlim = c(-7.966, -7.825), ylim = c(40.607, 40.733)) +
+  theme_bw()
+```
+
+
+
+```{r}
+if (T) {
+  svg(here("Graficos", "graficos_dados_com_clusters.svg"), height = 30, width = 60)
+  GGally::ggpairs(dados_completos_c %>% select(-perfil), mapping = aes(colour = cluster, alpha = 0.5)) + theme_bw() -> g
+  print(g)
+  dev.off()
+}
+```
+Os pares sao demasiados tmb
+
+Visualização com t-SNE (n e preciso por ou analisar)
+
+```{r}
+library(Rtsne)
+set.seed(1)
+dados_completos_c %>% 
+  select(-perfil) %>% 
+  select(-cluster) %>% 
+  Rtsne(perplexity = 30, dims = 2) -> tsne
+```
+
+```{r}
+library(ggforce)
+tsne$Y %>%as_tibble() %>%
+  mutate(cluster = dados_completos_c$cluster) %>% 
+  ggplot(aes(x = V1, y = V2, color = cluster)) +
+  # geom_point() +
+  geom_mark_hull(aes(x = V1, y = V2, fill = cluster), expand = 0, alpha = 0.1, concavity = 2) +
+  expand_limits(x = c(-25, 25), y = c(-25, 25))
+
+tsne$Y %>%
+  as_tibble() %>%
+  mutate(cluster = dados_completos_c$cluster) %>% 
+  ggplot(aes(x = V1, y = V2, color = cluster)) +
+  geom_point() +
+  geom_mark_ellipse(aes(x = V1, y = V2, color = cluster), expand = 0) +
+  expand_limits(x = c(-25, 25), y = c(-25, 25))
+```
+
+```{r}
+represent_cluster <- function(df) {
+  df %>% 
+    select(-perfil) %>% 
+    select(-cluster) %>% 
+    fastDummies::dummy_cols(remove_selected_columns = T) %>%
+    # compute mean of every column
+    summarise_all(mean) %>% 
+    data.table::transpose(keep.names = "column_name") %>% 
+    ggplot(aes(x = column_name, y = V1)) +
+    geom_col() +
+    coord_flip() +
+    ylim(-0.6, 2)
+}
+p1 <- dados_completos_c %>%
+  filter(cluster == 1) %>%
+  represent_cluster()
+p1
+ggsave(plot = p1, filename = here("Graficos", "cluster_1.svg"), height = 5, width = 10)
+p2 <- dados_completos_c %>%
+  filter(cluster == 2) %>%
+  represent_cluster()
+p2
+ggsave(plot = p2, filename = here("Graficos", "cluster_2.svg"), height = 5, width = 10)
+p3 <- dados_completos_c %>%
+  filter(cluster == 3) %>%
+  represent_cluster()
+p3
+ggsave(plot = p3, filename = here("Graficos", "cluster_3.svg"), height = 5, width = 10)
+p4 <- dados_completos_c %>%
+  filter(cluster == 4) %>%
+  represent_cluster()
+p4
+ggsave(plot = p4, filename = here("Graficos", "cluster_4.svg"), height = 5, width = 10)
+```
+
+```{r}
+
+```
+
+
+Cluster 1 - Condições climatéricas adversas no outono/inverno
+Cluster 2 - Condutores jovens/adultos em saídas noturnas 
+Cluster 3 - Despistes de condutores idosos (essencialmente de manhã) na primavera/verão (quando está melhor ponto)
+Cluster 4 - Colisões (deslocação casa-trabalho e vice-versa)
+
+
+```{r}
+dados_completos_c %>% filter(cluster==1) %>% ggplot(aes(x = cos_seconds, y = sin_seconds , color = hour(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Horas")
+```
+
+```{r}
+dados_completos_c %>% filter(cluster==2) %>% ggplot(aes(x = cos_seconds, y = sin_seconds , color = hour(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Horas")
+
+
+ggsave(here("Graficos", "cluster_2_viseu_altura_dia.svg"), height = 5, width = 10)
+```
+
+
+
+```{r}
+dados_completos_c %>% filter(cluster==3) %>% ggplot(aes(x = cos_seconds, y = sin_seconds , color = hour(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Horas")
+
+ggsave(here("Graficos", "cluster_3_viseu_altura_dia.svg"), height = 5, width = 10)
+```
+
+```{r}
+dados_completos_c %>% filter(cluster==4) %>% ggplot(aes(x = cos_seconds, y = sin_seconds , color = hour(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Horas")
+
+ggsave(here("Graficos", "cluster_4_viseu_altura_dia.svg"), height = 5, width = 10)
+```
+
+
+```{r}
+dados_completos_c %>% filter(cluster==1) %>% ggplot(aes(x = cos_percentage_year, y = sin_percentage_year, color=lubridate::month(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Mês")
+ggplot2::ggsave(here("Graficos", "cluster_1_viseu_altura_ano.svg"), height = 5, width = 10)
+```
+
+
+```{r}
+dados_completos_c %>% filter(cluster==2) %>% ggplot(aes(x = cos_percentage_year, y = sin_percentage_year, color=lubridate::month(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Mês")
+```
+
+```{r}
+dados_completos_c %>% filter(cluster==3) %>% ggplot(aes(x = cos_percentage_year, y = sin_percentage_year, color=lubridate::month(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Mês")
+
+ggsave(here("Graficos", "cluster_3_viseu_altura_ano.svg"), height = 5, width = 10)
+```
+
+```{r}
+dados_completos_c %>% filter(cluster==4) %>% ggplot(aes(x = cos_percentage_year, y = sin_percentage_year, color=lubridate::month(perfil$datetime))) + 
+  geom_point(alpha=0.2) +
+  scale_color_viridis_c() +
+  labs(color = "Mês")
+```
+
+```{r}
+library(plot3D)
+
+cluster1 <- dados_completos_c %>% filter(cluster == 1) %>% select(sin_seconds, cos_seconds)
+
+# cuts
+x_cut <- cut(cluster1$sin_seconds, breaks = 20)
+y_cut <- cut(cluster1$cos_seconds, breaks = 20)
+z <- table(x_cut, y_cut)
+
+hist3D(z = z, border = "black", theta = 140, xlab = "sin_seconds", ylab = "cos_seconds", zlab = "Frequency")
+```
+```{r}
+image2D(z = z, border = "black", xlab = "sin_seconds", ylab = "cos_seconds")
+```
+
+
+
+```{r}
+(cluster_1_viseu <- dados_completos_c[which(dados_completos_c$cluster==1),])
+(cluster_2_viseu <- dados_completos_c[which(dados_completos_c$cluster==2),])
+(cluster_3_viseu <- dados_completos_c[which(dados_completos_c$cluster==3),])
+(cluster_4_viseu <- dados_completos_c[which(dados_completos_c$cluster==4),])
+
+
+if(F) {
+  write.csv(cluster_1_viseu, here("data", "cluster_1_viseu.csv"))
+  write.csv(cluster_2_viseu, here("data", "cluster_2_viseu.csv"))
+  write.csv(cluster_3_viseu, here("data", "cluster_3_viseu.csv"))
+  write.csv(cluster_4_viseu, here("data", "cluster_4_viseu.csv"))
+}
+```
+

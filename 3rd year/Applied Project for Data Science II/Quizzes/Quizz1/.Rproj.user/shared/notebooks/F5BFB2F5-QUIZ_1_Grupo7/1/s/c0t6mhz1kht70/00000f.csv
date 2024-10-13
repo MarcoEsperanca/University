@@ -1,0 +1,2 @@
+"0","# apenas visualização"
+"0","head(Data[, c('Lesões a 30 dias', 'Estação_Ano', 'Ano matricula')])"

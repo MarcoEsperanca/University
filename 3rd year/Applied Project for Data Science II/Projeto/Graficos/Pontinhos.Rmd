@@ -1,0 +1,602 @@
+---
+title: "Latitude_e_Longitude"
+author: "Grupo 7"
+date: "17/09/2023"
+output:
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: github
+---
+
+# Bibliotecas
+Depois temos de colocar como o Plancha Gosta... ok!
+
+```{r}
+pacman::p_load(ggplot2,stats,ggfortify,rworldmap, viridis, 
+               ggmap, dplyr, leaflet, leaflet.extras, here, 
+               arrow, dbscan, outliers, mice)
+```
+
+# Leitura do Ficheiro 1
+```{r}
+#df <- readxl::read_xlsx(here("data", "acidentes-sample.xlsx"), sheet = 3)
+df <- readxl::read_xlsx("acidentes-sample.xlsx", sheet = 3)
+# View(df)
+```
+
+## Visualizar os nulos
+```{r}
+# Calcular a contagem de valores NA em cada coluna
+contagem_na <- colSums(is.na(df))
+
+# Identificar colunas com pelo menos um NA
+colunas_com_na <- names(contagem_na[contagem_na > 0])
+
+# Criar um data frame com as informações para o gráfico
+dados_grafico <- data.frame(Coluna = colunas_com_na, Contagem = contagem_na[colunas_com_na])
+
+# Criar o gráfico com ggplot2 usando a paleta "viridis"
+ggplot(dados_grafico, aes(x = Coluna, y = Contagem, fill = Coluna)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Contagem de Valores NA por Coluna",
+    x = "Coluna",
+    y = "Contagem de NA"
+  ) +
+  scale_fill_viridis(discrete = TRUE) +  # Usar a paleta "viridis" para cores discretas
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  geom_text(aes(label = Contagem), vjust = -0.5, size = 3, color = "black")  # Adicionar rótulos de contagem
+```
+
+
+
+## Eliminar os nulos da latitude e longitude
+
+```{r}
+df <- df %>%
+  filter(!is.na(`Latitude GPS`))
+
+df <- df %>%
+  filter(!is.na(`Longitude GPS`))
+
+nrow(df)
+```
+
+## Converter a latitude e longitude em valores numéricos
+
+```{r}
+# Converter as colunas de latitude e longitude para numérico
+df$`Latitude GPS` <- as.numeric(gsub(",", ".", df$`Latitude GPS`))
+df$`Longitude GPS` <- as.numeric(gsub(",", ".", df$`Longitude GPS`))
+
+# View(df)
+```
+
+
+## Mapa do mundo com os respetivos pontos
+
+```{r}
+# Definir uma paleta de cores personalizada consoante cada distrito
+pal_distritos <- colorFactor(
+  palette = c("blue", "green", "red", "purple", "orange"),  # Cores aleatórias, sei lá
+  domain = df$Distrito  # Filtar as cores pelos distritos
+)
+
+mapa <- leaflet(data = df) %>%  # Inicia a criação de um mapa usando o dataframe df
+  addTiles() %>%  # Adiciona um plano de fundo de "tiles" ao mapa
+  addCircleMarkers(  # Adiciona marcadores circulares ao mapa
+    lng = df$`Longitude GPS`,  # Especifica a longitude dos marcadores
+    lat = df$`Latitude GPS`,  # Especifica a latitude dos marcadores
+    popup = ~Distrito,  # Define o conteúdo dos popups com base na variável Distrito
+    label = ~Distrito,  # Define rótulos dos marcadores com base na variável Distrito
+    radius = 5,  # Define o tamanho dos marcadores
+    color = ~pal_distritos(Distrito),  # Define a cor dos marcadores com base na paleta pal_distritos
+    fillOpacity = 0.7  # Define a opacidade de preenchimento dos marcadores
+  ) %>%  # Fim da adição de marcadores
+  addLegend(  # Adiciona uma legenda ao mapa
+    pal = pal_distritos,  # Define a paleta de cores da legenda
+    values = ~Distrito,  # Define os valores da legenda com base na variável Distrito
+    title = "Distritos",  # Define o título da legenda
+    opacity = 1  # Define a opacidade da legenda
+  )
+
+# Exiba o mapa
+mapa
+```
+
+Visualizando o gráfico acima, é possível visualizar que existem distritos incorretos, pois as suas respetivas coordenadas (latitude e longitude) encontram-se incorretas.
+Devido a isso, será feita uma correção destes dados.
+
+```{r}
+tail(df)[, c("Distrito", "Latitude GPS", "Longitude GPS")]
+```
+## Tratamento dos dados
+
+### Eliminar as coordenadas erradas
+
+#### Visualização das coordenadas incorretas
+
+```{r, echo=FALSE}
+# Suponha que você tenha um dataframe chamado 'df' com as colunas 'Distrito', 'Latitude GPS' e 'Longitude GPS'.
+
+# Filtrar apenas as linhas para o distrito de Lisboa
+dados_lisboa <- df %>%
+  filter(Distrito == "Lisboa")
+
+# Calcular os Z-Scores para Latitude GPS e Longitude GPS
+z_scores_latitude <- scale(dados_lisboa$`Latitude GPS`)
+z_scores_longitude <- scale(dados_lisboa$`Longitude GPS`)
+
+# Definir um limite para identificar outliers com base no Z-Score (por exemplo, Z-Score > 1.2)
+limite_z_score <- 1.2
+
+# Identificar os outliers com base no limite do Z-Score
+outliers_latitude <- dados_lisboa[abs(z_scores_latitude) > limite_z_score, ]
+outliers_longitude <- dados_lisboa[abs(z_scores_longitude) > limite_z_score, ]
+
+# Exibir os outliers de Latitude GPS e Longitude GPS
+print("Outliers de Latitude GPS em Lisboa:")
+print(outliers_latitude[, c("Distrito", "Latitude GPS", "Longitude GPS")])
+
+print("Outliers de Longitude GPS em Lisboa:")
+print(outliers_longitude[, c("Distrito", "Latitude GPS", "Longitude GPS")])
+```
+
+```{r}
+# Suponha que você tenha um dataframe chamado 'df' com as colunas 'Distrito', 'Latitude GPS' e 'Longitude GPS'.
+
+# Calcular os Z-Scores para Latitude GPS e Longitude GPS em todo o dataframe
+z_scores_latitude <- scale(df$`Latitude GPS`)
+z_scores_longitude <- scale(df$`Longitude GPS`)
+
+# Definir um limite para identificar outliers com base no Z-Score (por exemplo, Z-Score > 1.2)
+limite_z_score <- 1.1
+
+# Identificar os outliers com base no limite do Z-Score
+outliers_latitude <- df[abs(z_scores_latitude) > limite_z_score, ]
+outliers_longitude <- df[abs(z_scores_longitude) > limite_z_score, ]
+
+# Exibir os outliers de Latitude GPS e Longitude GPS
+print("Outliers de Latitude GPS em todos os distritos:")
+print(outliers_latitude[, c("Distrito", "Latitude GPS", "Longitude GPS")])
+
+print("Outliers de Longitude GPS em todos os distritos:")
+print(outliers_longitude[, c("Distrito", "Latitude GPS", "Longitude GPS")])
+```
+
+
+```{r}
+mapa <- leaflet(data = outliers_longitude) %>%  # Inicia a criação de um mapa usando o dataframe outliers_latitude
+  addTiles() %>%  # Adiciona um plano de fundo de "tiles" ao mapa
+  addCircleMarkers(  # Adiciona marcadores circulares ao mapa
+    lng = outliers_longitude$`Longitude GPS`,  # Especifica a longitude dos marcadores
+    lat = outliers_longitude$`Latitude GPS`,  # Especifica a latitude dos marcadores
+    popup = ~Distrito,  # Define o conteúdo dos popups com base na variável Distrito
+    label = ~Distrito,  # Define rótulos dos marcadores com base na variável Distrito
+    radius = 5,  # Define o tamanho dos marcadores
+    color = ~pal_distritos(Distrito),  # Define a cor dos marcadores com base na paleta pal_distritos
+    fillOpacity = 0.7  # Define a opacidade de preenchimento dos marcadores
+  ) %>%  # Fim da adição de marcadores
+  addLegend(  # Adiciona uma legenda ao mapa
+    pal = pal_distritos,  # Define a paleta de cores da legenda
+    values = ~Distrito,  # Define os valores da legenda com base na variável Distrito
+    title = "Distritos",  # Define o título da legenda
+    opacity = 1  # Define a opacidade da legenda
+  )
+
+# Exiba o mapa
+mapa
+```
+
+#### Limites da Longitude e Latitude em Portugal
+
+> Link usada para visualizar as coordenadas de portugal: https://www.sunearthtools.com/dp/tools/conversion.php?lang=pt
+
+```{r}
+df_ordered <- df %>%
+  arrange(`Latitude GPS`)
+
+df_ordered$`Latitude GPS`[23000:23389]
+```
+
+Abaixo, é possivel visualizar as coordenadas que limitam Portugal
+
+```{r}
+# Latitude máxima: 42.13764
+# Latitude minima: 37.02335
+
+# Longitude Máxima: -6.285455
+# Longitude Minima: -9.473658
+```
+
+```{r}
+latitude_minima <- 37.02335
+latitude_maxima <- 42.13764
+longitude_minima <- -9.473658
+longitude_maxima <- -6.285455
+
+df$`Latitude GPS`[df$`Latitude GPS` < latitude_minima | df$`Latitude GPS` > latitude_maxima] <- NA
+df$`Longitude GPS`[df$`Longitude GPS` < longitude_minima | df$`Longitude GPS` > longitude_maxima] <- NA
+
+# View(df)
+```
+
+No Mapa abaixo podemos então visualizar que todos os pontos incorretos foram apagados
+
+```{r}
+# Definir uma paleta de cores personalizada consoante cada distrito
+pal_distritos <- colorFactor(
+  palette = c("blue", "green", "red", "purple", "orange"),  # Cores aleatórias, sei lá
+  domain = df$Distrito  # Filtar as cores pelos distritos
+)
+
+mapa <- leaflet(data = df) %>%  # Inicia a criação de um mapa usando o dataframe df
+  addTiles() %>%  # Adiciona um plano de fundo de "tiles" ao mapa
+  addCircleMarkers(  # Adiciona marcadores circulares ao mapa
+    lng = df$`Longitude GPS`,  # Especifica a longitude dos marcadores
+    lat = df$`Latitude GPS`,  # Especifica a latitude dos marcadores
+    popup = ~Distrito,  # Define o conteúdo dos popups com base na variável Distrito
+    label = ~Distrito,  # Define rótulos dos marcadores com base na variável Distrito
+    radius = 5,  # Define o tamanho dos marcadores
+    color = ~pal_distritos(Distrito),  # Define a cor dos marcadores com base na paleta pal_distritos
+    fillOpacity = 0.7  # Define a opacidade de preenchimento dos marcadores
+  ) %>%  # Fim da adição de marcadores
+  addLegend(  # Adiciona uma legenda ao mapa
+    pal = pal_distritos,  # Define a paleta de cores da legenda
+    values = ~Distrito,  # Define os valores da legenda com base na variável Distrito
+    title = "Distritos",  # Define o título da legenda
+    opacity = 1  # Define a opacidade da legenda
+  )
+
+# Exiba o mapa
+mapa
+```
+
+
+### Imputação dos dados
+Foi realizada uma imputação dos dados pela mediana ()
+
+> Nota: Com o mice, estava sempre a receber o erro Error in solve.default(xtx + diag(pen)) : 
+  system is computationally singular: reciprocal condition number = 3.78478e-24
+> Erro que é devido à "má qualidade" dos dados (possivelmente muitos nulos)
+
+```{r}
+# Substituir os valores nulos na coluna de Latitude GPS pelo valor da mediana por distrito
+df <- df %>%
+  group_by(Distrito) %>%
+  mutate(`Latitude GPS` = ifelse(is.na(`Latitude GPS`), median(`Latitude GPS`, na.rm = TRUE), `Latitude GPS`))
+
+# Repetir o mesmo processo para a coluna de Longitude GPS
+df <- df %>%
+  group_by(Distrito) %>%
+  mutate(`Longitude GPS` = ifelse(is.na(`Longitude GPS`), median(`Longitude GPS`, na.rm = TRUE), `Longitude GPS`))
+
+# Desfazer o agrupamento
+df <- ungroup(df)
+```
+
+No mapa a seguir, podemos notar que as coordenadas se encontram corretas
+
+```{r}
+# Definir uma paleta de cores personalizada consoante cada distrito
+pal_distritos <- colorFactor(
+  palette = c("blue", "green", "red", "purple", "orange"),  # Cores aleatórias, sei lá
+  domain = df$Distrito  # Filtar as cores pelos distritos
+)
+
+mapa <- leaflet(data = df) %>%  # Inicia a criação de um mapa usando o dataframe df
+  addTiles() %>%  # Adiciona um plano de fundo de "tiles" ao mapa
+  addCircleMarkers(  # Adiciona marcadores circulares ao mapa
+    lng = df$`Longitude GPS`,  # Especifica a longitude dos marcadores
+    lat = df$`Latitude GPS`,  # Especifica a latitude dos marcadores
+    popup = ~Distrito,  # Define o conteúdo dos popups com base na variável Distrito
+    label = ~Distrito,  # Define rótulos dos marcadores com base na variável Distrito
+    radius = 5,  # Define o tamanho dos marcadores
+    color = ~pal_distritos(Distrito),  # Define a cor dos marcadores com base na paleta pal_distritos
+    fillOpacity = 0.7  # Define a opacidade de preenchimento dos marcadores
+  ) %>%  # Fim da adição de marcadores
+  addLegend(  # Adiciona uma legenda ao mapa
+    pal = pal_distritos,  # Define a paleta de cores da legenda
+    values = ~Distrito,  # Define os valores da legenda com base na variável Distrito
+    title = "Distritos",  # Define o título da legenda
+    opacity = 1  # Define a opacidade da legenda
+  )
+
+# Exiba o mapa
+mapa
+```
+
+
+```{r}
+distritos_unicos <- unique(df$Distrito)
+```
+
+## Lixo
+
+```{r}
+# sapply(df, class)
+```
+
+```{r, eval=FALSE}
+colnames(df) <- gsub(" ", "_", colnames(df))
+
+# Lista de distritos únicos em seu dataframe
+distritos_unicos <- unique(df$Distrito)
+
+# Filtrar apenas as colunas numéricas
+colunas_numericas <- df %>%
+  select_if(is.numeric) %>%
+  select(-Velocidade_local) %>% 
+  select(-Velocidade_geral) %>% 
+  select(-Latitude_GPS) %>% 
+  select(-Longitude_GPS) %>% 
+  select(-Km)
+
+for (distrito in distritos_unicos) {
+  # Filtrar os dados para o distrito atual
+  df_distrito <- df %>% filter(Distrito == distrito)
+  
+  # Selecionar apenas as colunas numéricas para o distrito atual
+  df_distrito_numeric <- df_distrito %>% select(all_of(names(colunas_numericas)))
+  
+  # Realizar a imputação
+  imputacao <- mice(df_distrito_numeric, method = "pmm", m = 5)
+  
+  # Obter os dados imputados
+  df_distrito_imputado <- complete(imputacao, 1)
+  
+  # Atualizar os dados originais para o distrito atual com os dados imputados
+  df <- df %>%
+    left_join(df_distrito_imputado, by = "Id._Acidente")
+}
+```
+
+```{r, eval=FALSE}
+# Suponha que você tenha um dataframe chamado 'df' com as colunas 'Latitude GPS' e 'Longitude GPS'.
+# Certifique-se de que as colunas já foram renomeadas como mencionado anteriormente.
+
+# Selecionar apenas as colunas numéricas
+df_numeric <- df %>%
+  select_if(is.numeric)
+
+# Definir um limite para identificar outliers com base no Z-Score (por exemplo, Z-Score > 1.1)
+limite_z_score <- 1.1
+
+# Identificar os outliers com base no limite do Z-Score
+outliers_latitude <- df_numeric[abs(scale(df_numeric$Latitude.GPS)) > limite_z_score, ]
+outliers_longitude <- df_numeric[abs(scale(df_numeric$Longitude.GPS)) > limite_z_score, ]
+
+# Criar um dataframe para imputação
+df_imputacao <- df_numeric
+
+# Substituir os outliers por NA nas coordenadas de Latitude GPS
+df_imputacao$Latitude.GPS[abs(scale(df_imputacao$Latitude.GPS)) > limite_z_score] <- NA
+
+# Substituir os outliers por NA nas coordenadas de Longitude GPS
+df_imputacao$Longitude.GPS[abs(scale(df_imputacao$Longitude.GPS)) > limite_z_score] <- NA
+
+# Realizar a imputação usando o pacote 'mice'
+imputacao <- mice(df_imputacao, method = "pmm", m = 5)  # Número de iterações (m) pode ser ajustado
+
+# Obter os dados imputados
+df_final <- complete(imputacao, 1)  # Use a primeira imputação
+
+# Exibir o dataframe final
+print("Dataframe Final:")
+print(df_final)
+
+```
+
+```{r}
+head(df)
+```
+
+```{r}
+library(forcats)
+
+densidade_acidentes <- df %>%
+  group_by(Distrito) %>%
+  summarize(Num_Acidentes = n_distinct(df[,1]))
+
+distritos <- df$Distrito
+
+distritos %>% as_factor() %>% levels()
+```
+
+
+
+
+```{r}
+dados_completos <- left_join(distritos, densidade_acidentes, by = c("NomeDoDistrito" = "Distrito"))
+
+ggplot(data = dados_completos) +
+  geom_sf(aes(fill = Num_Acidentes)) +
+  scale_fill_gradient(low = "lightblue", high = "darkred") +
+  labs(title = "Densidade de Acidentes por Distrito em Portugal") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(densidade_acidentes, aes(x = reorder(Distrito, -Num_Acidentes), y = Num_Acidentes)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(title = "Densidade de Acidentes por Distrito em Portugal", x = "Distrito", y = "Número de Acidentes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r}
+library(leaflet)
+library(dplyr)
+library(RColorBrewer)
+
+# Suponha que você já tenha carregado seus dados de acidentes em um dataframe chamado df
+
+# Criar uma paleta de cores personalizada com base nos distritos
+cores_personalizadas <- brewer.pal(n = length(unique(df$Distrito)), name = "Set1")
+
+# Calcule a densidade de acidentes por distrito
+densidade_acidentes <- df %>%
+  group_by(Distrito) %>%
+  summarize(Num_Acidentes = n_distinct(Id._Acidente))
+
+# Crie um mapa interativo usando o pacote leaflet
+mapa <- leaflet(data = densidade_acidentes) %>%
+  setView(lng = -8.0, lat = 39.5, zoom = 6) %>%  # Defina o ponto central e o nível de zoom do mapa
+  addProviderTiles("CartoDB.Positron") %>%  # Adicione um plano de fundo de mapa
+
+  # Adicione os distritos como polígonos coloridos
+  addPolygons(
+    fillColor = cores_personalizadas,
+    fillOpacity = 0.7,
+    color = "white",
+    weight = 1,
+    data = densidade_acidentes,
+    stroke = TRUE,
+    label = ~paste(Distrito, "<br>Densidade de Acidentes:", Num_Acidentes),
+    highlight = highlightOptions(
+      weight = 3,
+      color = "black",
+      bringToFront = TRUE
+    )
+  ) %>%
+
+  # Adicione uma legenda personalizada
+  addLegend(
+    pal = colorFactor(palette = cores_personalizadas, domain = densidade_acidentes$Distrito),
+    values = ~Distrito,
+    opacity = 0.7,
+    title = "Densidade de Acidentes",
+    position = "bottomright"
+  )
+
+mapa
+
+
+
+
+```
+
+
+
+```{r}
+library(leaflet)
+library(dplyr)
+library(RColorBrewer)
+library(sp)
+
+# Suponha que você já tenha carregado seus dados de acidentes em um dataframe chamado df
+
+# Criar uma paleta de cores personalizada com base nos distritos
+cores_personalizadas <- brewer.pal(n = length(unique(df$Distrito)), name = "Set1")
+
+# Calcule a densidade de acidentes por distrito
+densidade_acidentes <- df %>%
+  group_by(Distrito) %>%
+  summarize(Num_Acidentes = n_distinct(Id._Acidente))
+
+# Crie um objeto espacial com os distritos
+distritos_sp <- densidade_acidentes %>%
+  st_as_sf(coords = c("Longitude GPS", "Latitude GPS"), crs = 4326)
+
+# Crie um mapa interativo usando o pacote leaflet
+mapa <- leaflet(data = distritos_sp) %>%
+  setView(lng = -8.0, lat = 39.5, zoom = 6) %>%  # Defina o ponto central e o nível de zoom do mapa
+  addProviderTiles("CartoDB.Positron") %>%  # Adicione um plano de fundo de mapa
+
+  # Adicione os distritos como polígonos coloridos
+  addPolygons(
+    fillColor = cores_personalizadas,
+    fillOpacity = 0.7,
+    color = "white",
+    weight = 1,
+    label = ~paste(Distrito, "<br>Densidade de Acidentes:", Num_Acidentes),
+    highlight = highlightOptions(
+      weight = 3,
+      color = "black",
+      bringToFront = TRUE
+    )
+  ) %>%
+
+  # Adicione uma legenda personalizada
+  addLegend(
+    pal = colorFactor(palette = cores_personalizadas, domain = densidade_acidentes$Distrito),
+    values = ~Distrito,
+    opacity = 0.7,
+    title = "Densidade de Acidentes",
+    position = "bottomright"
+  )
+
+mapa
+
+```
+```{r}
+library(leaflet)
+library(dplyr)
+library(RColorBrewer)
+
+# Suponha que você já tenha carregado seus dados de acidentes em um dataframe chamado df
+
+# Criar uma paleta de cores personalizada com base nos distritos
+cores_personalizadas <- brewer.pal(n = length(unique(df$Distrito)), name = "Set1")
+
+# Calcule a densidade de acidentes por distrito
+densidade_acidentes <- df %>%
+  group_by(Distrito) %>%
+  summarize(Num_Acidentes = n_distinct(Id._Acidente))
+
+# Crie um mapa interativo usando o pacote leaflet
+mapa <- leaflet(data = densidade_acidentes) %>%
+  setView(lng = -8.0, lat = 39.5, zoom = 6) %>%  # Defina o ponto central e o nível de zoom do mapa
+  addProviderTiles("CartoDB.Positron") %>%  # Adicione um plano de fundo de mapa
+
+  # Adicione os distritos como polígonos coloridos
+  addPolygons(
+    fillColor = ~cores_personalizadas[match(Distrito, unique(Distrito))],
+    fillOpacity = 0.7,
+    color = "white",
+    weight = 1,
+    label = ~paste(Distrito, "<br>Densidade de Acidentes:", Num_Acidentes),
+    highlight = highlightOptions(
+      weight = 3,
+      color = "black",
+      bringToFront = TRUE
+    )
+  ) %>%
+
+  # Adicione uma legenda personalizada
+  addLegend(
+    pal = colorFactor(palette = cores_personalizadas, domain = densidade_acidentes$Distrito),
+    values = ~Distrito,
+    opacity = 0.7,
+    title = "Densidade de Acidentes",
+    position = "bottomright"
+  )
+
+mapa
+
+```
+
+```{r}
+mapa <- leaflet(data = densidade_acidentes) %>%  # Inicia a criação de um mapa usando o dataframe df
+  addTiles() %>%  # Adiciona um plano de fundo de "tiles" ao mapa
+  addCircleMarkers(  # Adiciona marcadores circulares ao mapa
+    lng = df$`Longitude GPS`,  # Especifica a longitude dos marcadores
+    lat = df$`Latitude GPS`,  # Especifica a latitude dos marcadores
+    popup = ~Distrito,  # Define o conteúdo dos popups com base na variável Distrito
+    label = ~Distrito,  # Define rótulos dos marcadores com base na variável Distrito
+    radius = 5,  # Define o tamanho dos marcadores
+    color = ~pal_distritos(Distrito),  # Define a cor dos marcadores com base na paleta pal_distritos
+    fillOpacity = 0.7  # Define a opacidade de preenchimento dos marcadores
+  ) %>%  # Fim da adição de marcadores
+  addLegend(  # Adiciona uma legenda ao mapa
+    pal = pal_distritos,  # Define a paleta de cores da legenda
+    values = ~Distrito,  # Define os valores da legenda com base na variável Distrito
+    title = "Distritos",  # Define o título da legenda
+    opacity = 1  # Define a opacidade da legenda
+  )
+
+mapa
+
+```
+

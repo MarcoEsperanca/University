@@ -1,0 +1,8 @@
+"0","Data %>% dplyr::filter(`Ano matricula` <= 2007) %>% nrow() %*% (1/(nrow(Data) - nrow(dplyr::filter(Data, is.na(`Ano matricula`))))) %*% 100 %>% round(1)"
+"1","    "
+"1"," [,1]"
+"1","
+[1,]"
+"1"," 51.5"
+"1","
+"

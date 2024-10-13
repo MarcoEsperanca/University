@@ -1,0 +1,24 @@
+"0","Data$continha <- 2020 - Data$`Ano matricula`"
+"0","skim(Data)"
+"1","── Data Summary ────────────────────────
+"
+"1","                           Values
+"
+"1","Name                       Data  
+"
+"1","Number of rows             40209 
+"
+"1","Number of columns          41    
+"
+"1","_______________________          
+"
+"1","Column type frequency:           
+"
+"1","  factor                   21    
+"
+"1","  numeric                  20    
+"
+"1","________________________         
+"
+"1","Group variables            None  
+"

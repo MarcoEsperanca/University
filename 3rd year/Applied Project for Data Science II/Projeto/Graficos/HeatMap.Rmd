@@ -1,0 +1,131 @@
+---
+title: "Heat Map"
+author: "Grupo 7 aka Melhor Grupo"
+date: "20/09/2023"
+output:
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: github
+    df_print: paged
+---
+
+### Bibliotecas
+```{r}
+pacman::p_load(ggplot2, arrow, here, rworldmap, 
+               sf, maps, dplyr, geobr, viridis, 
+               rnaturalearth, BiocManager, prettydoc)
+# devtools::install_github("ropensci/rnaturalearthhires")
+```
+
+```{css, echo = FALSE}
+.cols{
+background-color: yellow;
+font-weight: bold;
+}
+
+body{
+background-color:#F5DEB3;
+animation-name: rainbooo;
+animation-duration: 4s;
+animation-iteration-count:infinite;
+font-weight: bold;
+}
+@keyframes rainbooo {
+   0%   {color:#B36AB5; left:0px; top:0px;}
+  20%  {color:#B18FC0; left:200px; top:0px;}
+  40%  {color:#8F9FC0; left:200px; top:0px;}
+  60%  {color:#67B9C1; left:200px; top:0px;}
+  80%  {color:#29D9A8; left:-400px; top:200px;}
+  100% {color:#21DF67; left:0px;top:0px;}
+}
+
+.container{
+overflow: auto
+}
+
+.text {
+float: left;
+width: 50%; 
+padding-right: 20px;
+}
+
+.output{
+float: left;
+width: 50%;
+}
+
+.fold {
+  cursor: pointer;
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #f5f5f5;
+}
+```
+
+
+## Leitura do Ficheiro 
+
+```{r, echo=FALSE}
+# df <- readxl::read_excel(here("data", "acidentes-sample.xlsx"))
+df  <- readxl::read_excel("acidentes-sample.xlsx")
+```
+
+```{r, class.source="cols"}
+unique(df$Distrito)
+```
+
+```{r, class.source="cols"}
+# Agregar os dados por distrito
+dados_distritos <- df %>%
+  group_by(Distrito) %>%
+  summarise(Numero_de_Acidentes = n())
+dados_distritos
+```
+
+```{r, class.source="cols"}
+Portugal <- ne_states(country = "Portugal", returnclass = 'sf')
+ggplot()+geom_sf(data=Portugal)
+```
+
+```{r, class.source="cols"}
+Portugal <- Portugal %>%
+  filter(!name %in% c("Azores", "Madeira"))
+ggplot()+geom_sf(data=Portugal)
+```
+
+```{r, class.source="cols"}
+Portugal_yh <- merge(Portugal, dados_distritos, by.x = "name", by.y = "Distrito", all.x = TRUE)
+
+heatmap_plot <-  ggplot(Portugal_yh, aes(fill = Numero_de_Acidentes)) +
+  geom_sf() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Mapa de Calor de Acidentes por Distrito em Portugal") + 
+  geom_text(aes(x = longitude, y = latitude, label = Numero_de_Acidentes),
+            size = 3, color = "black", check_overlap = TRUE, nudge_x = 0, nudge_y = .1, family = "serif",fontface = "bold") +
+  theme_minimal() +
+  coord_sf(crs = st_crs(Portugal_yh))
+heatmap_plot
+
+ggsave("heatmap_portugalWhiteRed.png", plot = heatmap_plot, width = 12, height = 8, dpi = 300)
+```
+
+<div class="container">
+  <div class="text">
+    Este gráfico corresponde à quantidade de acidentes que ocorreram em Portugal Continental nos dados fornecidos. Como podemos visualizar, as regiões de Lisboa e Porto são as mais recorrentes de existirem acidentes
+  </div>
+  <div class="output">
+    ```{r, class.source="cols", fig.align="right", echo = FALSE}  
+heatmap_plot <- ggplot(Portugal_yh, aes(fill = Numero_de_Acidentes)) +
+  geom_sf()+
+  scale_fill_viridis_c(option = "mako", name = "Número de Acidentes", direction = -1) +  
+  labs(title = "HeatMap dos Acidentes rodoviários em Portugal, por Distritos") +
+  theme_minimal() +
+  coord_sf(crs = st_crs(Portugal_yh))
+heatmap_plot
+
+ggsave("heatmap_portugalViridis.png", plot = heatmap_plot, width = 12, height = 8, dpi = 300)
+    ```
+  </div>
+</div>
+
+

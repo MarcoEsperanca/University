@@ -1,0 +1,7 @@
+h5 <- read.graph("Exh5.txt", format = c("edgelist"), directed=F)
+kc <- coreness(h5)
+kc
+plot(h5, vertex.size=kc*10, vertex.label=kc)
+deg <- degree(h5, mode="all")
+ht <- mean(deg*deg) / (mean(deg)^2)
+ht

@@ -1,0 +1,28 @@
+"0",""
+"0","ctree_large.cj<-prune.tree(ctree_large.cj, best=15 )"
+"0","summary(ctree_large.cj)"
+"1","
+Classification tree:
+"
+"1","snip.tree(tree = ctree_large.cj, nodes = c(74L, 75L, 12L, 44L, 
+"
+"1","8L, 46L, 47L, 10L, 14L))
+"
+"1","Number of terminal nodes:  15 
+"
+"1","Residual mean deviance:  1.027 = 764.1 / 744 
+"
+"1","Misclassification error rate:"
+"1"," "
+"1","0.2437"
+"1"," "
+"1","="
+"1"," "
+"1","185"
+"1"," "
+"1","/"
+"1"," "
+"1","759"
+"1"," "
+"1","
+"

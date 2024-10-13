@@ -1,0 +1,456 @@
+## Leitura do Ficheiro
+
+```{r}
+df_final <- here("data", "nomes_marotos", "acidentes.parquet") %>% arrow::read_parquet()
+df_final %>% names()
+```
+## Visualização dos tipos de acidentes em cada um dos distritos
+
+```{r}
+tabela_rotundas <- df_final %>%
+  group_by(distrito) %>%
+  summarise(Contagem = n()) %>%
+  left_join(
+    df_final %>%
+      group_by(distrito, interseccao) %>%
+      summarise(ContagemInterseccao = n())
+  ) %>%
+  mutate(Percentagem = ContagemInterseccao / Contagem * 100)
+tabela_rotundas
+```
+
+
+```{r}
+tabela_rotundas %>%
+  filter(interseccao == "Em rotunda") %>%
+  ggplot(aes(x = ContagemInterseccao, y = reorder(distrito, -ContagemInterseccao), fill = interseccao)) +
+  geom_bar(stat = "identity", position = "identity") +
+  labs(x = "Contagem",
+       y = "Distrito") +
+  theme_minimal() + 
+  guides(fill = FALSE)
+```
+
+
+```{r}
+tabela_rotundas %>%
+  filter(interseccao == "Em rotunda") %>%
+  ggplot(aes(x = Percentagem, y = reorder(distrito, -Percentagem), fill = interseccao)) +
+  geom_bar(stat = "identity", position = "identity") +
+  labs(x = "Percentagem",
+       y = "Distrito") +
+  theme_minimal() + 
+  coord_cartesian(xlim = c(0, 100)) +
+  guides(fill = FALSE)
+```
+
+```{r}
+tabela_rotundas %>%
+  filter(interseccao == "Em rotunda") -> tabela_rotundas
+```
+
+```{r, class.source="cols"}
+library(rnaturalearth)
+Portugal <- ne_states(country = "Portugal", returnclass = 'sf')%>%
+  filter(!name %in% c("Azores", "Madeira"))
+```
+
+```{r, class.source="cols"}
+library(sf)
+Portugal_yh <- merge(Portugal, tabela_rotundas, by.x = "name", by.y = "distrito", all.x = TRUE)
+
+heatmap_plot <-  ggplot(Portugal_yh, aes(fill = ContagemInterseccao)) +
+  geom_sf() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Mapa de Calor de Acidentes por Distrito em Portugal") + 
+  geom_text(aes(x = longitude, y = latitude, label = ContagemInterseccao),
+            size = 3, color = "black", check_overlap = TRUE, nudge_x = 0, nudge_y = .1) +
+  theme_minimal() +
+  coord_sf(crs = st_crs(Portugal_yh))
+heatmap_plot
+```
+
+## Visualização dos acidentes em Viseu
+
+```{r}
+viseu <- df_final %>%
+  filter(distrito == "Viseu") %>% 
+  filter(!is.na(interseccao))
+```
+
+
+```{r}
+padroes <- c("praça", "rotunda")
+viseuRotundas <- viseu %>%
+  filter(
+    apply(
+      cbind(
+        sapply(padroes, function(padrao) str_detect(tolower(nomeRua), padrao)),
+        str_detect(tolower(interseccao), "em rotunda")
+      ),
+      1,
+      any
+    )
+  )
+```
+
+```{r}
+# viseuRotundas <- viseu[viseu$interseccao=="Em rotunda", ]
+```
+
+## Mapas geográficos
+
+```{r}
+library(sp)
+library(leaflet.extras)
+viseu_clean <- viseu
+
+viseu_clean <- viseu_clean[!(is.na(viseu_clean$Longitude) | is.na(viseu_clean$Latitude)), ]
+
+viseu_clean$Longitude <- as.numeric(gsub(",", ".", viseu_clean$Longitude))
+viseu_clean$Latitude <- as.numeric(gsub(",", ".", viseu_clean$Latitude))
+
+limite_lat <- c(36.9, 42.2)
+limite_lon <- c(-9.6, -6.2)
+
+viseu_clean <- viseu_clean[viseu_clean$Latitude >= limite_lat[1] & viseu_clean$Latitude <= limite_lat[2], ]
+viseu_clean <- viseu_clean[viseu_clean$Longitude >= limite_lon[1] & viseu_clean$Longitude <= limite_lon[2], ]
+
+coords <- cbind(viseu_clean$Longitude, viseu_clean$Latitude)
+rownames(coords) <- rownames(viseu_clean)
+spatial_data <- SpatialPointsDataFrame(coords, data = viseu_clean)
+
+m <- leaflet() %>%
+  addTiles() %>%
+  addHeatmap(data = spatial_data, radius = 8.5)
+m
+```
+
+```{r}
+pal_interseccao <- colorFactor(
+  palette = c("blue", "red", "black", "purple", "orange", "yellow", "green"),
+  domain = viseuRotundas$interseccao
+)
+
+mapa <- leaflet(data = viseuRotundas) %>%  
+  addTiles() %>%  
+  addCircleMarkers(
+    lng = viseuRotundas$Longitude,  
+    lat = viseuRotundas$Latitude,  
+    popup = ~paste("Interseção: ", interseccao, "<br>Latitude: ", Latitude, "<br>Longitude: ", Longitude, "<br>Id: " , idAcidente, "<br> Localização: ", nomeRua, "<br>Data: ", datetime),
+    label = ~interseccao,  
+    radius = 5,  
+    color = ~pal_interseccao(interseccao),  
+    fillOpacity = 0.7  
+  ) %>%  
+  addLegend(
+    pal = pal_interseccao,  
+    values = ~interseccao,  
+    title = "Interseção"  
+  )
+
+mapa
+```
+
+
+## visualização das rotundas de forma individual
+
+```{r}
+
+remove_accents <- function(x) {
+  stringi::stri_trans_general(x, "Latin-ASCII")
+}
+
+viseuRotundasCorrigido <- viseuRotundas %>%
+  mutate(nomeRua = toupper(nomeRua),
+         nomeRua = remove_accents(nomeRua),
+         nomeRua = gsub("\\.", "", nomeRua),
+         nomeRua = gsub("\\)", "", nomeRua),
+         nomeRua = gsub("\\(", "", nomeRua),
+         nomeRua = gsub("AVª", "AVENIDA", nomeRua),
+         nomeRua = gsub("--", NA, nomeRua),
+         nomeRua = gsub(" - VISEU", "", nomeRua),
+         nomeRua = gsub("º", "", nomeRua),
+         nomeRua = gsub("AV ", "AVENIDA ", nomeRua),
+         nomeRua = gsub(" -VISEU", "AVENIDA", nomeRua),
+         nomeRua = gsub("ROTUNDA BETAO LIZ", "ROTUNDA DA BETAO LIZ", nomeRua),
+         nomeRua = gsub("ROTUNDA COMBATENTE DO ULTRAMAR", "ROTUNDA COMBATENTES DO ULTRAMAR", nomeRua),
+         nomeRua = gsub(" - MANGUALDE", "ROTUNDA DA BETAO LIZ", nomeRua),
+         nomeRua = gsub("ROTUNDA GUMIRAES", "ROTUNDA DE GUMIRAES", nomeRua),
+         nomeRua = gsub(" - ROTUNDA DA PROVIR", "", nomeRua),
+         nomeRua = gsub("ROTUNDA DO PALACIO DO GELO", "ROTUNDA MANHOSA", nomeRua),
+         # nomeRua = gsub("[-/].*$", "", nomeRua),
+         nomeRua = trimws(nomeRua))
+
+# viseuRotundasCorrigido <- viseuRotundasCorrigido[!(is.na(viseuRotundasCorrigido$nomeRua)), ]
+
+contagem_rotundas <- viseuRotundasCorrigido %>% 
+  group_by(nomeRua) %>% 
+  summarise(Contagem = n())
+
+contagem_rotundas$Contagem <- as.numeric(contagem_rotundas$Contagem)
+contagem_rotundas <- contagem_rotundas %>% arrange(desc(Contagem))
+
+contagem_rotundas <- contagem_rotundas[-(is.na(contagem_rotundas$nomeRua)), ]
+
+contagem_rotundas
+```
+
+```{r}
+topRotundas <- head(contagem_rotundas$nomeRua, 5)
+
+cincoRotundas <- viseuRotundasCorrigido %>%
+  filter(tolower(nomeRua) %in% tolower(topRotundas))
+
+cincoRotundas$ano <- format(as.POSIXct(cincoRotundas$datetime), "%Y")
+
+dados_por_ano <- cincoRotundas %>%
+  group_by(nomeRua, ano) %>%
+  summarise(NumeroAcidentes = n())
+
+
+# Criar o gráfico de linha com diferentes cores e linhas para cada rua
+ggplot(dados_por_ano, aes(x = ano, y = NumeroAcidentes, group = nomeRua, color = nomeRua, linetype = nomeRua)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(title = "Evolução do Número de Acidentes por Ano para Ruas Selecionadas",
+       x = "Ano",
+       y = "Número de Acidentes") +
+  theme_minimal() +
+  scale_color_manual(values = c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "pink")) +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted", "dotdash", "longdash"))
+
+
+```
+
+```{r}
+rotundasFeridos <- viseuRotundasCorrigido %>%
+  group_by(nomeRua) %>%
+  summarise(
+    Soma_FeridosLigeiros = sum(nFeridosLigeiros, na.rm = TRUE),
+    Soma_FeridosGraves = sum(nFeridosGraves, na.rm = TRUE),
+    Soma_Mortos = sum(nMortos, na.rm = TRUE)
+  )
+
+# Adicionar coluna Total
+rotundasFeridos <- rotundasFeridos %>% 
+  mutate(Total = Soma_FeridosLigeiros + Soma_FeridosGraves + Soma_Mortos)
+
+# Ordenar as ruas pela soma total de acidentes
+rotundasFeridos <- rotundasFeridos %>% 
+  arrange(desc(Total))
+
+# Selecionar as cinco primeiras ruas
+top5_rotundas <- head(rotundasFeridos, 30)
+
+# Filtrar para remover ruas com nome nulo
+top5_rotundas <- top5_rotundas[!is.na(top5_rotundas$nomeRua), ]
+
+# Reformatar os dados para o formato longo
+top5_rotundas_long <- top5_rotundas %>%
+  gather(key = "Tipo", value = "Quantidade", -nomeRua, -Total)
+
+# Criar o barplot empilhado
+ggplot(top5_rotundas_long, aes(x = nomeRua, y = Quantidade, fill = Tipo)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = "Barra empilhada com o número de acidentes",
+       x = "Rua",
+       y = "Número de Acidentes",
+       fill = "Tipo") +
+  scale_fill_manual(values = c("#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854")) +
+  theme_minimal() +
+  coord_flip()
+```
+
+```{r}
+# Rotundas Interessantes
+# - Rotunda do palacio do gelo -> rotunda manhosa
+# - Praça Carlos Lopes
+# - Praça Paulo VI - 
+# - Praça República
+# - Praça Joao Paulo II - 
+```
+
+```{r}
+top5_rotundas <- rotundasFeridos %>%
+  filter(nomeRua %in% c("ROTUNDA MANHOSA", "PRACA CARLOS LOPES", "PRACA PAULO VI", "PRACA REPUBLICA", "PRACA JOAO PAULO II"))
+
+top5_rotundas_long <- top5_rotundas %>%
+  gather(key = "Tipo", value = "Quantidade", -nomeRua, -Total)
+
+rotundasInteressantes <- ggplot(top5_rotundas_long, aes(x = nomeRua, y = Quantidade, fill = Tipo)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = "Barra empilhada com o número de acidentes",
+       x = "Rua",
+       y = "Número de Acidentes",
+       fill = "Tipo") +
+  scale_fill_manual(
+    name = "Tipo",
+    values = c("#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854"),
+    labels = c("Nº Feridos Graves", "Nº Feridos Ligeiros", "Nº Mortos")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 6.5, angle = 10, hjust = .5)) + 
+  geom_text(aes(label = ifelse(Quantidade > 0, as.character(Quantidade), ""), y = Quantidade),
+            position = position_stack(vjust = 0.5), size = 3)
+  
+
+rotundasInteressantes
+
+ggsave("rotundasInteressantes.svg", rotundasInteressantes)
+```
+
+
+```{r}
+
+pal_interseccao <- colorFactor(
+  palette = c("#FFA500", "#eae501", "#95f801" , "#66c2a5" ),
+  domain = viseuRotundasCorrigido$nFeridosGraves
+)
+
+mapa <- leaflet(data = viseuRotundasCorrigido) %>%  
+  addTiles() %>%  
+  addCircleMarkers(
+    lng = viseuRotundasCorrigido$Longitude,  
+    lat = viseuRotundasCorrigido$Latitude,  
+    popup = ~paste("Interseção: ", interseccao, "<br>Latitude: ", Latitude, "<br>Longitude: ", Longitude, "<br>Id: " , idAcidente, "<br> Localização: ", nomeRua, "<br>Data: ", datetime),
+    label = ~nFeridosGraves,  
+    radius = 5,  
+    color = ~pal_interseccao(nFeridosGraves),  
+    fillOpacity = 1
+  ) %>%  
+  addLegend(
+    pal = pal_interseccao,  
+    values = ~nFeridosGraves,  
+    title = "nFeridosGraves"  
+  )
+
+mapa
+```
+
+```{r}
+pal_interseccao <- colorFactor(
+  palette = c("blue", "black", "purple", "red", "yellow", "green", "cyan", "magenta", "brown", "gray", "pink", "lightblue"),
+  domain = viseuRotundasCorrigido$oqaconteceu
+)
+
+mapa <- leaflet(data = viseuRotundasCorrigido) %>%  
+  addTiles() %>%  
+  addCircleMarkers(
+    lng = viseuRotundasCorrigido$Longitude,  
+    lat = viseuRotundasCorrigido$Latitude,  
+    popup = ~paste("Interseção: ", oqaconteceu, "<br>Latitude: ", Latitude, "<br>Longitude: ", Longitude, "<br>Id: " , idAcidente, "<br> Localização: ", nomeRua, "<br>Data: ", datetime),
+    label = ~oqaconteceu,  
+    radius = 5,  
+    color = ~pal_interseccao(oqaconteceu),  
+    fillOpacity = 0.7  
+  ) %>%  
+  addLegend(
+    pal = pal_interseccao,  
+    values = ~oqaconteceu,  
+    title = "Interseção"  
+  )
+
+mapa
+```
+
+```{r}
+tabela_pivot <- maditr::dcast(viseuRotundasCorrigido, nomeRua ~ oqaconteceu, length)
+
+tabela_pivot %>% filter(nomeRua %in% c("ROTUNDA MANHOSA", "PRACA CARLOS LOPES", "PRACA PAULO VI", "PRACA REPUBLICA", "PRACA JOAO PAULO II")) 
+```
+
+
+```{r}
+library(RColorBrewer)
+ruas_selecionadas <- c("ROTUNDA MANHOSA", "PRACA CARLOS LOPES", "PRACA PAULO VI", "PRACA REPUBLICA", "PRACA JOAO PAULO II")
+
+dados_filtrados <- viseuRotundasCorrigido %>%
+  filter(nomeRua %in% ruas_selecionadas)
+
+cores_bonitas <- brewer.pal(n = length(unique(dados_filtrados$oqaconteceu)), name = "Paired")
+
+graficoFixe <- ggplot(dados_filtrados, aes(x = "", fill = oqaconteceu)) +
+  geom_bar(width = 1, position = "dodge") +
+  scale_fill_manual(values = cores_bonitas) +
+  ggtitle("Percentagem de Acidentes por Tipo em Diferentes Ruas") +
+  theme_minimal() +
+  facet_wrap(~nomeRua, scales = "fixed") +
+  theme(strip.text = element_text(size = 12, color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        strip.background = element_rect(color = "black", fill = "#D3D3D3"))
+
+graficoFixe
+
+ggsave("top5RotundasOqaconteceu.svg", graficoFixe, width = 16, height = 10)
+```
+
+
+## Evolução dos acidentes (Plancha)
+
+```{r}
+viseu$ano <- format(as.Date(viseu$datetime), "%Y")
+viseu$ano_mes <- format(as.Date(viseu$datetime), "%Y-%m")
+
+# Vetor com 10 cores
+cores_base <- c("#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6")
+
+# Função para repetir cada cor 12 vezes por ordem
+repetir_cores <- function(cores, vezes = 12) {
+  rep(cores, each = vezes)
+}
+
+# Aplicar a função ao vetor de cores base
+cores <- repetir_cores(cores_base)
+
+# Criar um dataframe com a correspondência entre cores e anos
+legenda_data <- data.frame(cores = factor(cores_base), ano = unique(viseu$ano)[1:10])
+
+# Agrupe por ano e mês, conte o número de acidentes
+dados_por_ano_mes <- viseu %>%
+  group_by(ano_mes) %>%
+  summarise(NumeroAcidentes = n())
+
+ggplot(dados_por_ano_mes, aes(x = ano_mes, y = NumeroAcidentes, group = 1, color = factor(cores))) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Evolução do Número de Acidentes por Mês",
+       x = "Data",
+       y = "Número de Acidentes") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  scale_color_manual(values = cores_base, breaks = legenda_data$cores, labels = legenda_data$ano) +
+  geom_vline(xintercept = as.numeric(as.Date("2000-01-01")), color = "black", linetype = "dashed")
+
+```
+
+
+## Rotundas com Latitude e Longitude erradas
+
+```{r}
+limite_lat <- c(36.9, 42.2)
+limite_lon <- c(-9.6, -6.2)
+
+viseuRotundasCorrigidoFinal <- viseuRotundasCorrigido
+
+viseuRotundasCorrigidoFinal$Latitude[is.na(viseuRotundasCorrigidoFinal$Latitude)] <- 0
+viseuRotundasCorrigidoFinal$Longitude[is.na(viseuRotundasCorrigidoFinal$Longitude)] <- 0
+
+viseuRotundasCorrigidoFinal$Latitude[viseuRotundasCorrigidoFinal$Latitude < limite_lat[1] | viseuRotundasCorrigidoFinal$Latitude > limite_lat[2]] <- 0
+
+viseuRotundasCorrigidoFinal$Longitude[viseuRotundasCorrigidoFinal$Longitude < limite_lon[1] | viseuRotundasCorrigidoFinal$Longitude > limite_lon[2]] <- 0
+```
+
+```{r}
+viseuRotundasCorrigidoFinal
+```
+
+```{r}
+viseuRotundasCorrigidoFinal[viseuRotundasCorrigidoFinal$Latitude == 0, ] %>% 
+  group_by(nomeRua) %>% 
+  summarise(Contagem = n())
+```
+

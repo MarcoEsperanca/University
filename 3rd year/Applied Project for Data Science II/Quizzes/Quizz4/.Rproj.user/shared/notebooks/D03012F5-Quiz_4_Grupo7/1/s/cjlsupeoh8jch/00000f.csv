@@ -1,0 +1,7 @@
+"0","abrantes<-matrix (NA ,1,2)"
+"0","abrantes[1,]<-c(39.5, -8.2)"
+"0","(pred_abrantes <- predict(clusters,as.data.frame(abrantes),df.clusters[,6:7]))"
+"1","[1]"
+"1"," 3"
+"1","
+"

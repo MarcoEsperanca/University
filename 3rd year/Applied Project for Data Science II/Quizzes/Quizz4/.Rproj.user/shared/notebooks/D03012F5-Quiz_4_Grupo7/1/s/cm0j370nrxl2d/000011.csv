@@ -1,0 +1,3 @@
+"0","df2 %>% "
+"0","  count(Distrito) %>% "
+"0","  kable()"

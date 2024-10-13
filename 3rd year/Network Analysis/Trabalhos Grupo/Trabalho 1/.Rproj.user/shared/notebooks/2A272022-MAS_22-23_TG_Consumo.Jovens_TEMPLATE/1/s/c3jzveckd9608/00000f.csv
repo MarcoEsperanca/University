@@ -1,0 +1,8 @@
+"0","ctree_large.cj<-tree(q10~ q12b_a+ q13a+ q14e + q14i,data=CJ.train,"
+"0","control=tree.control(nrow(CJ.train), "
+"0","mincut = 1, minsize = 2, mindev = 0.001), split = ""deviance"")"
+"0",""
+"0",""
+"0","# cost-complexity prunning"
+"0","seq_ctree.cj <- prune.tree(ctree_large.cj)"
+"0","plot(seq_ctree.cj$size, seq_ctree.cj$dev, pch=20)"

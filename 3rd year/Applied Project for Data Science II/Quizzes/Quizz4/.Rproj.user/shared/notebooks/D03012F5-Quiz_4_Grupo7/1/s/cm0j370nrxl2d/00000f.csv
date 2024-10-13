@@ -1,0 +1,7 @@
+"0","df %>% "
+"0","  select(2:14) %>% "
+"0","  filter(Distrito %in% c(""Leiria"", ""Lisboa"", ""Santarém"", ""Setúbal"")) %>% "
+"0","  mutate(Distrito = factor(Distrito)) %>%"
+"0","  drop_na() -> df2"
+"0","df2 %>% "
+"0","  count(Distrito)"

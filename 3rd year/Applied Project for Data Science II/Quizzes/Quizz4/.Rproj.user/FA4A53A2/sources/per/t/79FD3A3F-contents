@@ -1,0 +1,222 @@
+---
+title: 'PACDII: Quiz IV'
+author: "7 - João Francisco Botas"
+date: "14 de outubro de 2023"
+output: word_document
+---
+
+# Elementos do grupo:
+- Allan Kardec da Silva Rodrigues, nº 103380
+- André Plancha Fernandes, nº 105289
+- Diogo Alexandre Alonso de Freitas, nº 104841
+- João Francisco Marques Gonçalves da Silva Botas, nº 104782
+- Marco Delgado Esperança, nº 110451
+
+
+```{r}
+# Remover tudo!
+rm(list = ls())
+# Incluir as libraries de que necessita
+library(tidyverse)
+library(conflicted)
+conflicts_prefer(dplyr::filter)
+library(here)
+library(knitr)
+```
+
+
+# IV.1) [4 valores] Leia “Acidentes.csv” e obtenha um resumo (summary) adequado para todas as variáveis do ficheiro (após corrigir Longitude.GPS e Latitude.GPS (*) e formatar corretamente acidentes$Datahora). No Quiz faça upload – em formato pdf - do referido sumário.
+(*) CONSIDERE QUE:
+Portugal Continental tem latitude mínima de 37N e máxima de 42N 
+Portugal Continental tem longitude mínima 10W (-10) e máxima de 6W (-6)
+
+```{r}
+df <- read.csv(here("acidentes.csv"), na.strings = c("NÃO DEFINIDO")) %>%  
+  mutate(Datahora = ymd_hms(Datahora)) %>% 
+  mutate(Longitude.GPS = ifelse(Longitude.GPS > 0, Longitude.GPS * -1, Longitude.GPS), 
+         Latitude.GPS = ifelse(Latitude.GPS < 0, Latitude.GPS * -1, Latitude.GPS)) %>% 
+  filter(Longitude.GPS > -10 & Longitude.GPS < -6 & Latitude.GPS > 37 & Latitude.GPS < 42)
+summary(df)
+```
+
+# IV.2) [3.5 valores] Selecione apenas as variáveis 2 a 14, restrinja o conjunto de dados ao Distrito “Leiria”, “Lisboa”, “Santarém” e “Setúbal”, e, seguidamente, descarte todos os dados omissos.Obtenha uma tabela de frequências absolutas da variável Distrito e, no Quiz, faça  upload – em formato pdf - da mesma tabela.
+
+```{r}
+df %>% 
+  select(2:14) %>% 
+  filter(Distrito %in% c("Leiria", "Lisboa", "Santarém", "Setúbal")) %>% 
+  mutate(Distrito = factor(Distrito)) %>%
+  drop_na() -> df2
+df2 %>% 
+  count(Distrito)
+df2 %>% 
+  count(Distrito) %>% 
+  kable()
+```
+
+# IV.3) [6 valores] Efectue o agrupamento dos dados obtidos em IV.2) com o algoritmo DBSCAN, baseado na Latitude.GPS e Longitude.GPS, utilizando eps=0.07 e minPts=40. Apresente um mapa dos clusters obtidos.No Quiz faça upload, em formato pdf, deste mapa.
+
+
+```{r}
+set.seed(123)
+library(dbscan)
+df2 %>% 
+  select(Latitude.GPS, Longitude.GPS) %>% 
+  dbscan(eps = 0.07, minPts = 40) -> clusters
+df2 %>%
+  mutate(cluster = clusters$cluster %>% as.factor) -> df.clusters
+df.clusters %>%
+  ggplot(aes(x = Longitude.GPS, y = Latitude.GPS, color = cluster)) +
+  geom_point()
+clusters
+```
+
+
+```{r}
+# mapa
+pak::pak("ropensci/rnaturalearthhires")
+library(rnaturalearth)
+portugal <- ne_states(country = "portugal", returnclass = "sf")
+portugal %>%
+  ggplot() +
+    # color districts
+  geom_sf() +
+  geom_point(data = df.clusters, alpha = 1, size = 1, aes(x = Longitude.GPS, y = Latitude.GPS, color = cluster)) +
+  coord_sf(xlim = c(-10, -7), ylim = c(37.7, 40.1)) +
+  theme_bw()
+```
+
+
+```{r}
+# portugal distribuição pelos 4 distritos (Leiria, Lisboa, Santarém, Setúbal)
+portugal %>%
+  ggplot() +
+  geom_sf() +
+  geom_point(data = df.clusters, alpha = 1, size = 1, aes(x = Longitude.GPS, y = Latitude.GPS, color = Distrito)) +
+  coord_sf(xlim = c(-10, -7), ylim = c(37.7, 40.1)) +
+  theme_bw()
+```
+
+```{r}
+if (F) {
+  db_df <- data.frame(clusters$cluster)
+  asd <- merge(df2, db_df, by.x = 0, by.y=0, sort=FALSE)
+  
+  cluster_0 <- asd[which(asd$clusters.cluster==0),]
+  cluster_1 <- asd[which(asd$clusters.cluster==1),]
+  cluster_2 <- asd[which(asd$clusters.cluster==2),]
+  cluster_3 <- asd[which(asd$clusters.cluster==3),]
+  cluster_4 <- asd[which(asd$clusters.cluster==4),]
+  write.csv(cluster_0, "cluster_0.csv")
+  write.csv(cluster_1, "cluster_1.csv")
+  write.csv(cluster_2, "cluster_2.csv")
+  write.csv(cluster_3, "cluster_3.csv")
+  write.csv(cluster_4, "cluster_4.csv")
+}
+```
+
+# IV.4) [6.5 valores] Analise as associações entre as variáveis nominais e métricas disponíveis e os clusters obtidos; use o Distrito para traçar o perfil dos clusters obtendo uma tabela cruzada; determine em que cluster se situam as localidades de Abrantes e Óbidos. Na sequência destas análises complete as frases que se apresentam no Quiz.
+
+```{r}
+df.clusters %>% 
+  select(Distrito, cluster) %>% 
+  table()
+# grafico de barras
+df.clusters %>% 
+  select(Distrito, cluster) %>% 
+  ggplot(aes(x = Distrito, fill = cluster)) +
+  geom_bar(position = "fill")
+```
+
+A associação entre os Clusters obtidos e Distrito, medida por **V de Cramer** tem o valor **0.32** (com 2 c.d.). 
+
+```{r}
+# Distrito
+lsr::cramersV(df.clusters$Distrito, df.clusters$cluster) %>% round(3)
+lsr::cramersV(df.clusters$Entidades.Fiscalizadoras, df.clusters$cluster, simulate.p.value=TRUE) %>% round(3)
+lsr::cramersV(df.clusters$Dia.da.Semana, df.clusters$cluster) %>% round(3)
+lsr::cramersV(df.clusters$Características.Tecnicas1, df.clusters$cluster) %>% round(3)
+lsr::cramersV(df.clusters$Cond.Aderência, df.clusters$cluster, simulate.p.value=TRUE) %>% round(3)
+```
+
+De acordo com a medida de associação **Eta**(R de pearson | R de Spearman | V de Cramer | Eta), **nenhuma das** (todas, algumas, nenhuma das) variáveis métricas são relevante para a caracterização dos clusters obtidos.
+
+```{r}
+options(scipen = 999)
+df.clusters %>% 
+  # select if numeric or cluster
+  select(where(is.numeric)) %>%
+  aov(df.clusters$cluster %>% as.numeric ~ ., data = .) %>% 
+  lsr::etaSquared() %>% 
+  as.data.frame() %>% 
+  select(eta.sq) %>% 
+  mutate(eta = sqrt(eta.sq)) %>% 
+  arrange(-eta) %>%
+  round(3)
+```
+
+
+
+Dentro do cluster 3 o observa-se a percentagem **59.8**% (com 1 c.d.) de acidentes ocorridos no Distrito de Leiria;e no cluster **1** os acidentes neste distrito representam 25.6%. 
+
+
+```{r}
+table(df.clusters$cluster, df.clusters$Distrito) %>% t() %>%
+prop.table(.,2) %>% round(3)*100
+```
+
+A localidade de Abrantes, com Longitude.GPS = **-8.2**  (graus decimais com 1 c.d.) e Latitude.GPS = **39.5** (graus decimais com 1 c.d.) classifica-se no cluster **3** ((número do cluster)
+
+
+Para o concelho de Abrantes - previsão
+
+```{r}
+df %>% filter(Concelho == "Abrantes") %>% select(Latitude.GPS, Longitude.GPS) -> abrantes
+lat_abrantes.min <- min(abrantes$Latitude.GPS)
+lat_abrantes.max <- max(abrantes$Latitude.GPS)
+long_abrantes.min <- min(abrantes$Longitude.GPS)
+long_abrantes.max <- max(abrantes$Longitude.GPS)
+lat_abrantes.mean <- mean(abrantes$Latitude.GPS)
+long_abrantes.mean <- mean(abrantes$Longitude.GPS)
+# centro oficial: 39,464294, -8,197861
+centroide_abrantes_lat <- 39.464294
+centroide_abrantes_long <- -8.197861
+tibble(lat_abrantes.min, lat_abrantes.max, lat_abrantes.mean, centroide_abrantes_lat, long_abrantes.min, long_abrantes.max, long_abrantes.mean, centroide_abrantes_long) %>% t() %>% round(1)
+
+# df.clusters %>% filter(Latitude.GPS > 39.4 & Latitude.GPS < 39.5 & Longitude.GPS > -8.2 & Longitude.GPS < -8.1) %>% select(Distrito, cluster) %>% table()
+```
+
+
+```{r}
+abrantes<-matrix (NA ,1,2)
+abrantes[1,]<-c(39.5, -8.2)
+(pred_abrantes <- predict(clusters,as.data.frame(abrantes),df.clusters[,6:7]))
+```
+
+Para o concelho de Óbidos - previsão
+
+
+```{r}
+df %>% filter(Concelho == "Obidos") %>% select(Latitude.GPS, Longitude.GPS) -> obidos
+lat_obidos.min <- min(obidos$Latitude.GPS)
+lat_obidos.max <- max(obidos$Latitude.GPS)
+long_obidos.min <- min(obidos$Longitude.GPS)
+long_obidos.max <- max(obidos$Longitude.GPS)
+(lat_obidos.mean <- mean(obidos$Latitude.GPS))
+(long_obidos.mean <- mean(obidos$Longitude.GP))
+
+obidos <- matrix(NA, 1, 2)
+obidos[1,] <- c(39.30, -9.11)
+(pred_obidos <- predict(clusters, as.data.frame(obidos), df.clusters[,6:7]))
+```
+
+### **Respostas finais**
+
+A associação entre os Clusters obtidos e Distrito, medida por **V de Cramer** tem o valor **0.32** (com 2 c.d.). De acordo com a medida de associação **Eta**(R de pearson | R de Spearman | V de Cramer | Eta), **nenhumas das** (todas, algumas, nenhuma das) variáveis métricas são relevante para a caracterização dos clusters obtidos. Dentro do cluster 3 o observa-se a percentagem **59.8**% (com 1 c.d.) de acidentes ocorridos no Distrito de Leiria;e no cluster **1** os acidentes neste distrito representam 25.6%. A localidade de Abrantes, com Longitude.GPS = **-8.2**(graus decimais com 1 c.d.) e Latitude.GPS = **39.5** (graus decimais com 1 c.d.) classifica-se no cluster **3** ((número do cluster).
+
+
+
+
+
+
+

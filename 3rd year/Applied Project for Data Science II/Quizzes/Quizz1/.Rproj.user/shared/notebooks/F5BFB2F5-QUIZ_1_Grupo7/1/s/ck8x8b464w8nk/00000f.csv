@@ -1,0 +1,6 @@
+"0","dados_preparados <- Data %>%"
+"0","  group_by(`Ano matricula`, `Lesões a 30 dias`) %>%"
+"0","  summarize(Contagem = n())"
+"2","`summarise()` has grouped output by 'Ano matricula'. You can override using the `.groups` argument."
+"0","dados_preparados <- na.omit(dados_preparados)"
+"0","dados_preparados"

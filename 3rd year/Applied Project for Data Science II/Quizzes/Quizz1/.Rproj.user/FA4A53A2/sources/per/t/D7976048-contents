@@ -1,0 +1,198 @@
+--- 
+title: "PACDII: QUIZ I"
+author: "nome completo do aluno"
+date: "21 de setembro, 2023"
+output: word_document
+---
+
+# Nota:
+Deve efetuar todos os Save com "Save with encoding UTF-8" de modo a manter palavras acentuadas e caracteres especiais**
+
+## Base de dados:condutores.csv
+
+
+```{r}
+# Remover tudo!
+rm(list = ls())
+# Incluir as libraries de que necessita
+pacman::p_load(VIM, tidyverse, conflicted, skimr, ggplot2, lsr, lubridate, nycflights13, tidyverse)
+```
+# Questão 1 [5 valores] 
+
+## Leitura dos dados condutores.csv.
+
+```{r}
+Data <-read.csv("condutores.csv", header=TRUE, stringsAsFactors = T, sep=",",dec=",",check.names=F,na.strings=c("NA","NÃO DEFINIDO"),fileEncoding = "utf-8")
+```
+
+
+## Averigue a existência de valores omissos e, caso existam, identifique as respetivas variáveis. Realize a imputação dos valores omissos da variável "Tempo.Condução.Continuada" considerando as variáveis Tipo.Veiculo, Tipo.Serviço e Distrito. Faça upload do sumário de Tempo.Condução.Continuada após a imputação.
+
+```{r}
+# Visualizar os nulos em cada uma das colunas
+summary(is.na(Data))
+
+# Colunas com omissos
+(colunas_com_nulos <- names(Data)[colSums(is.na(Data)) > 0])
+
+# Imputação dos dados sei lá
+k_escolha = round(sqrt(nrow(Data)))
+dfn <- kNN(Data[c(10, 13, 14, 22)], variable = c("Tempo Condução Continuada"), k = k_escolha)
+Data$`Tempo Condução Continuada` <- dfn$`Tempo Condução Continuada`
+
+# Sumário da variável Tempo.Condução.Continuada após a imputação
+summary(Data$`Tempo Condução Continuada`)
+```
+
+## Questão 2 [5 valores] Efetue a análise descritiva da variável Ano.matricula, de modo a completar:
+
+```{r}
+
+#Efetue a análise descritiva da variável Ano.matricula, de modo a completar:
+
+#O veículo mais antigo é do ano _1914_ e a percentagem (cumulativa) de veículos com ano de matrícula inferior ou igual a 2007 é _48.7_%(percentagem com uma casa decimal); os veículos com ano de matrícula inferior a _1977_ (indique o ano) podem ser considerados outliers. Considerando o ano de 2020 para o cálculo da idade dos veículos, observa-se que 25% dos veículos têm menos de _5_ anos. 
+
+```
+
+#### Resolução 1
+```{r}
+min(Data$`Ano matricula`, na.rm = TRUE)
+```
+
+#### Resolução 2
+
+```{r}
+Data %>% dplyr::filter(`Ano matricula` <= 2007) %>% nrow() %*% (1/nrow(Data)) %*% 100 %>% round(1)
+```
+
+**OU**
+
+
+```{r}
+Data %>% dplyr::filter(`Ano matricula` <= 2007) %>% nrow() %*% (1/(nrow(Data) - nrow(dplyr::filter(Data, is.na(`Ano matricula`))))) %*% 100 %>% round(1)
+```
+
+Neste exercício, o grupo achou que existiam 2 respostas possíveis válidas, sendo estas as mostradas acima. Na 1ª resolução estamos a contar no denominador (nº de veículos totais)
+
+
+#### Resolução 3
+
+```{r}
+bp <- boxplot(Data$`Ano matricula`, horizontal = TRUE, outline = TRUE, col = "#57aed1", border = "black", notch = TRUE)
+title(main = "BoxPlot dos Anos de Matrícula", xlab = "Ano de Matrícula")
+points(bp$out, bp$group, col = "#d82625", pch = 19, cex = .8)
+legend("topright", legend = c("Boxplot", "Outliers"), fill = c("#57aed1", "#d82625"))
+
+max(bp$out)
+
+floor(lower_t <- quantile(Data$`Ano matricula`, probs = 0.25, na.rm = T) - 1.5*IQR(Data$`Ano matricula`, na.rm = T))
+```
+#### Resolução 4 
+
+```{r}
+quantile(Data$`Ano matricula`,prob=.75, na.rm = T)
+```
+
+```{r, include=FALSE}
+Data$continha <- 2020 - Data$`Ano matricula`
+skim(Data)
+```
+
+
+## Questão 3 [5 valores] Crie a variável nominal Estação_Ano com as classes "Inverno", "Primavera", "Verão" e "Outono" e faça upload do correspondente gráfico de barras apresentando as frequências relativas.
+
+# Inverno: 22/12 -> 20/03
+# Primavera: 20/03 -> 21/06
+# Verão: 21/06 -> 23/09
+# Outono: 23/09 -> 22/12
+
+
+```{r}
+Data <-  Data %>% 
+  mutate(Datahora = as.Date(Datahora, format = "%Y:%m:%d")) %>%
+  mutate(Estação_Ano = case_when(
+    (month(Datahora) == 12 & day(Datahora) >= 22) | 
+    (month(Datahora) == 1 | month(Datahora) == 2) | 
+    (month(Datahora) == 3 & day(Datahora) < 20) ~ "Inverno",
+    
+    (month(Datahora) >= 3 & month(Datahora) <= 5) | 
+    (month(Datahora) == 6 & day(Datahora) < 21) ~ "Primavera",
+    
+    (month(Datahora) >= 6 & month(Datahora) <= 8) | 
+    (month(Datahora) == 9 & day(Datahora) < 23) ~ "Verão",
+    
+    (month(Datahora) >= 9 & month(Datahora) <= 11) | 
+    (month(Datahora) == 12 & day(Datahora) < 22) ~ "Outono",
+    
+    TRUE ~ "Inverno"
+  ))
+
+Data$Estação_Ano <- as.factor(Data$Estação_Ano)
+freq_table <- table(Data$Estação_Ano)
+freq_relativa_estacoes <- round((freq_table / sum(freq_table)) * 100, 2)
+
+# Inverno - azul, verão- amarelo, outono - castanho, primavera - verde
+season_colors <- c("#57aed1", "#885435", "#228b22", "#ffda2c")
+
+plot_data <- data.frame(freq_relativa_estacoes)
+colnames(plot_data)[1] <- "Estação"
+
+# Create the ggplot barplot
+ggplot(plot_data, aes(x = Estação, y = Freq, fill = Estação)) +
+   geom_bar(stat = "identity") +
+   ylim(0, max(freq_relativa_estacoes) + 10) +
+   geom_text(aes(label = Freq), vjust = -0.5, size = 4) +
+   scale_fill_manual(values = season_colors) +
+   labs(title = "Frequência Relativa por Estação/Ano") +
+   xlab("Estação/Ano") +
+   ylab("Frequência Relativa (%)") +
+   theme_minimal()
+```
+
+## Questão 4 [5 valores] Com base no cálculo de uma medida de associação, estude a relação existente entre a variável Lesoes.a.30.dias e cada uma das seguintes variáveis: Estacao_ano e Ano.matricula. Faça o upload dos valores das medidas de associação e dos gráficos que ilustram as mesmas associações.
+
+
+```{r}
+# Visualização das colunas pretendidas
+summary(Data[c(4,42,16)])
+
+# Associação/Relação entre variáveis nominais
+cramersV(Data$`Lesões a 30 dias`, Data$Estação_Ano)
+
+# Associação/Relação entre uma variável nominal e métrica
+anova_eta <- aov(Data$`Ano matricula` ~ Data$`Lesões a 30 dias`) %>% etaSquared()
+anova_eta[1,1]
+eta <- sqrt(anova_eta[1,1])
+eta
+```
+
+```{r}
+# apenas visualização
+head(Data[, c('Lesões a 30 dias', 'Estação_Ano', 'Ano matricula')])
+```
+
+```{r}
+dados_preparados <- Data %>%
+  group_by(Estação_Ano, `Lesões a 30 dias`) %>%
+  summarize(Contagem = n())
+
+dados_preparados %>% ggplot(aes(x = Estação_Ano,y=Contagem, fill = `Lesões a 30 dias`)) + geom_bar(stat = "identity", position = "dodge")
+```
+
+```{r}
+dados_preparados <- Data %>%
+  group_by(`Ano matricula`, `Lesões a 30 dias`) %>%
+  summarize(Contagem = n())
+dados_preparados <- na.omit(dados_preparados)
+dados_preparados
+```
+
+```{r}
+dados_preparados %>% 
+  ggplot() + 
+  geom_line(aes(x = `Ano matricula`, y = Contagem, group = `Lesões a 30 dias`, col = `Lesões a 30 dias`), size = .7) +
+  ylim(0, max(dados_preparados$Contagem))
+```
+
+## Tarefa final: Submeta, no Moddle, um ficheiro pdf resultado da compilação do TEMPLATE_QUIZ1.
+## Caso os resultados apresentados não sejam coerentes com as respostas dadas, a classificação será penalizada.

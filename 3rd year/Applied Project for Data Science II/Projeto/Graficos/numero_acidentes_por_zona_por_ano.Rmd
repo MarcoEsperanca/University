@@ -1,0 +1,98 @@
+---
+title: "numero_acidentes_por_zona_por_ano"
+output: html_document
+date: '2023-09-20'
+---
+
+```{r}
+pacman::p_load(tidyverse, ggplot2)
+```
+
+
+```{r}
+source(here("data", "join_anos.R"))
+```
+
+
+```{r}
+data <- here("data/original", "acidentes.parquet") %>% arrow::read_parquet()
+data %>% names()
+```
+
+```{r}
+summary(data)
+```
+
+```{r}
+head(data)
+```
+
+
+```{r}
+mapear_regiao <- function(distrito) {
+  norte <- c("Porto", "Braga", "Viana do Castelo", "Vila Real", "Bragança", "Aveiro", "Viseu")
+  centro <- c("Lisboa", "Leiria", "Santarém", "Castelo Branco", "Coimbra", "Aveiro")
+  sul <- c("Faro", "Setúbal", "Évora", "Beja", "Portalegre")
+
+  if (distrito %in% norte) {
+    return("Norte")
+  } else if (distrito %in% centro) {
+    return("Centro")
+  } else if (distrito %in% sul) {
+    return("Sul")
+  } else {
+    return("Desconhecida") 
+  }
+}
+
+data$Regiao <- sapply(data$Distrito, mapear_regiao)
+```
+
+
+```{r}
+data$Ano <- as.integer(format(as.Date(data$Datahora, format = "%Y:%m:%d %H:%M:%S"), "%Y"))
+
+
+
+resultado <- data %>%
+  group_by(Ano, Regiao) %>%
+  summarize(NumAcidentes = n())
+
+
+print(resultado)
+```
+
+
+
+```{r}
+grafico_barras <- ggplot(resultado, aes(x = Ano, y = NumAcidentes, fill = Regiao)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Número de Acidentes por Região (Anual)",
+       x = "Ano",
+       y = "Número de Acidentes") +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("Norte" = "blue", "Centro" = "green", "Sul" = "red"))   
+
+grafico_barras
+
+```
+
+```{r}
+anos <- unique(resultado$Ano)
+
+for (ano in anos) {
+  dados_ano <- resultado[resultado$Ano == ano, ]
+  
+  grafico_barras <- ggplot(dados_ano, aes(x = Regiao, y = NumAcidentes, fill = Regiao)) +
+    geom_bar(stat = "identity") +
+    labs(title = paste("Número de Acidentes por Região (Ano", ano, ")"),
+         x = "Região",
+         y = "Número de Acidentes") +
+    theme_minimal() +
+    scale_fill_manual(values = c("Norte" = "blue", "Centro" = "green", "Sul" = "red"))
+  
+  print(grafico_barras)
+}
+```
+

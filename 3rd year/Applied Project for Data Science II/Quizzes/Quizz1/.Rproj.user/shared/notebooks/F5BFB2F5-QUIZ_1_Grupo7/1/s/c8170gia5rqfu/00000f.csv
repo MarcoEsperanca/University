@@ -1,0 +1,4 @@
+"0","dados_preparados %>% "
+"0","  ggplot() + "
+"0","  geom_line(aes(x = `Ano matricula`, y = Contagem, group = `Lesões a 30 dias`, col = `Lesões a 30 dias`), size = .7) +"
+"0","  ylim(0, max(dados_preparados$Contagem))"

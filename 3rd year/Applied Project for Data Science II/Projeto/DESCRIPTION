@@ -1,0 +1,52 @@
+Package: PACDII
+Title: Trabalho de PACDII
+Version: 0.1
+Date: 2023-09-13
+Authors@R: c(
+    person("André", "Plancha", , "Andre_Plancha@iscte-iul.pt", role = c("aut", "cre"),
+           comment = c(Numero = "105289")),
+    person("João", "Botas", , "Joao_Botas@iscte-iul.pt", role = c("aut", "cre"),
+           comment = c(Numero = "104782")),
+    person("Marco", "Esperança", , "mdeao@iscte-iul.pt", role = c("aut", "cre"),
+           comment = c(Numero = "110451")),
+    person("Diogo", "Freitas", , "daafs@iscte-iul.pt", role = c("aut", "cre"),
+           comment = c(Numero = "104841")),
+    person("Allan Kardec", "Rodrigues", , "aksrs@iscte-iul.pt", role = c("aut", "cre"),
+           comment = c(Numero = "103380"))
+  )
+Maintainer: Andre_Plancha@iscte-iul.pt
+Description: Trabalho de PACDII sobre carros 
+License: All rights reserved
+Depends: 
+  R (>= 4.3.0)
+Encoding: UTF-8
+Imports: 
+    tidyverse (== 2.0.0),
+    fastverse (== 0.3.2),
+    here (== 1.0.1),
+    conflicted (== 1.2.0),
+    tidymodels (== 1.1.1),
+    arrow (== 14.0.0.1),
+    skimr (== 2.1.5),
+    archive (== 1.1.6),
+    janitor (== 2.2.0)
+    fastDummies (== 1.7.3),
+    cluster (== 2.1.6),
+    GGally (== 2.2.0),
+    ggforce (== 0.4.1),
+    rnaturalearth (== 0.3.4),
+    ropensci/rnaturalearthhires (== 0.2.1),
+    sf (== 1.0.14),
+    sp,
+    leaflet.extras,
+    stringi,
+    maditr,
+    RColorBrewer
+Suggests:
+    pak (== 0.7.0),
+    rstudioapi (== 0.15.0),
+    pacman (== 0.5.1),
+    pkgdepends (== 0.7.0),
+    markdown (== 1.11),
+    devtools (== 2.4.5),
+    nominatimlite (== 0.2.1)

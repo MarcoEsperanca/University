@@ -1,0 +1,68 @@
+---
+title: 'PACDII: Quiz IIVI'
+author: "ID Grupo e nome do representante"
+date: "2023-10-12"
+output: word_document
+---
+
+
+
+```{r}
+# Remover tudo!
+rm(list=ls()) 
+# Incluir as libraries de que necessita
+library(tidyverse)
+library(ggplot2)
+            
+```
+
+
+# IV.1) [4 valores] Leia “Acidentes.csv” e obtenha um resumo (summary) adequado para todas as variáveis do ficheiro (após corrigir Longitude.GPS e Latitude.GPS (*) e formatar corretamente acidentes$Datahora). No Quiz faça upload – em formato pdf - do referido sumário.
+(*) CONSIDERE QUE:
+Portugal Continental tem latitude mínima de 37N e máxima de 42N 
+Portugal Continental tem longitude mínima 10W (-10) e máxima de 6W (-6)
+
+
+
+```{r}
+data <- read.csv("Acidentes.csv", header = TRUE, check.names = T, sep = ",", dec = ".")
+
+# Funçao em R para dar o distrito segundo a latitude e longitude de cada acidente
+
+head(data)
+
+
+                
+```
+
+# IV.2) [3.5 valores] Selecione apenas as variáveis 2 a 14, restrinja o conjunto de dados ao Distrito “Leiria”, “Lisboa”, “Santarém” e “Setúbal”, e, seguidamente, descarte todos os dados omissos.Obtenha uma tabela de frequências absolutas da variável Distrito e, no Quiz, faça  upload – em formato pdf - da mesma tabela.
+
+
+```{r}
+data <- data[2:13]
+head(data)
+```
+
+```{r}
+unique(data$Distrito)
+```
+
+```{r}
+data <- data[data$Distrito == "Leiria" | data$Distrito == "Lisboa" | data$Distrito == "Santarém" | data$Distrito == "Setúbal",]
+
+
+
+head(data)
+```
+
+# IV.3) [6 valores] Efectue o agrupamento dos dados obtidos em IV.2) com o algoritmo DBSCAN, baseado na Latitude.GPS e Longitude.GPS, utilizando eps=0.07 e minPts=40. Apresente um mapa dos clusters obtidos.No Quiz faça upload, em formato pdf, deste mapa.
+
+```{r}
+
+```
+
+# IV.4) [6.5 valores] Analise as associações entre as variáveis nominais e métricas disponíveis e os clusters obtidos; use o Distrito para traçar o perfil dos clusters obtendo uma tabela cruzada; determine em que cluster se situam as localidades de Abrantes e Óbidos. Na sequência destas análises complete as frases que se apresentam no Quiz.
+
+```{r}
+
+```

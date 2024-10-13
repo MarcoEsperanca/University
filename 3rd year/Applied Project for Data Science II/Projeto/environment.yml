@@ -1,0 +1,16 @@
+name: pacdII
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - r-base=4.3.1
+  - r-arrow=14.0.1
+  - r-archive=1.1.6
+  - r-pak=0.7.0
+  - r-rstudioapi=0.15.0
+  - r-skimr=0.3.1
+  - r-tidymodels=1.1.1
+  - r-tidyverse=2.0.0
+  - r-markdown=1.11
+  - r-fastverse=0.3.2
+  - r-janitor=2.2.0

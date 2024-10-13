@@ -1,0 +1,138 @@
+---
+title: 'PACDII: Quiz III'
+author: "ID Grupo e nome do representante"
+date: "2023-10-05"
+output: word_document
+---
+
+
+
+```{r}
+# Remover tudo!
+
+# Incluir as libraries de que necessita
+library(tidyverse)
+library(conflicted)
+conflicts_prefer(dplyr::filter)
+library(here)
+library(magrittr)
+library(tidymodels)
+library(dplyr)
+```
+
+
+# III.1 [5 valores] 
+Leia “peões.csv” e retenha apenas as variáveis “Tipo.Natureza”, “Natureza”, “Ações.Peão” e “Lesões.a.30.dias”.
+
+```{r}
+read <- read.csv(here("peões.csv"), stringsAsFactors = T, check.names = T)
+df <- read %>% select(Tipo.Natureza, Natureza, Acções.Peão, Lesões.a.30.dias)
+df %>% Hmisc::describe()
+```
+
+Descarte todos os casos com dados omissos. 
+```{r}
+
+dfN <- df %>% filter(Acções.Peão != "NÃO DEFINIDO") %>% drop_na()
+dfN$Acções.Peão %<>% fct_drop()
+dfN %>% Hmisc::describe()
+```
+
+Adote dummy coding para as variáveis “Tipo.Natureza” e “Lesões.a.30.dias” (mantendo estas variáveis originais no seu conjunto de dados). No Quiz faça upload de um sumário dos dados “peoes_d” assim obtidos.
+
+```{r}
+dfND <- dfN %>% fastDummies::dummy_cols(select_columns = c("Tipo.Natureza", "Lesões.a.30.dias"), remove_most_frequent_dummy = T)
+peoes_d <- dfND
+peoes_d %>% summary()
+```
+
+
+# III.2) [5 valores] Efectue o agrupamento de “peoes_d” com o algoritmo PAM, usando a distância Manhattan com base nas variáveis dummy (recodificação das categorias de “Tipo.Natureza” e “Lesões.a.30.dias”). Obtenha 4 clusters. 
+
+
+```{r}
+set.seed(1)
+peoes_d.pam <- peoes_d %>% 
+  select(-Tipo.Natureza, -Natureza, -Acções.Peão, -Lesões.a.30.dias) %>%
+  cluster::pam(diss = F, k = 4, metric = "manhattan")
+peoes_d.pam %>% tidy()
+```
+
+```{r}
+peoes_d.pam %>% plot()
+```
+
+No Quiz faça upload de um gráfico de barras ilustrando a sua distribuição (usando a frequência absoluta)
+
+```{r}
+peoes_d.aug <- peoes_d.pam %>% augment(peoes_d)
+peoes_d.aug %>% 
+  ggplot(aes(x = .cluster)) +
+  geom_bar() +
+  labs(x = "Cluster", y = "Frequência absoluta", title = "Distribuição dos clusters", subtitle = "Algoritmo PAM")
+```
+
+
+# III.3) [5 valores] Caracterize os clusters obtidos usando as variáveis base relevantes. Para o efeito, calcule medidas de associação. No Quiz faça upload de gráficos de barras ilustrando as associações de interesse.
+
+
+```{r}
+# simulate.p.value=TRUE para não aparecer o warning the aproximação de chi-squared
+
+vc1 <- lsr::cramersV(peoes_d.aug$Tipo.Natureza,    peoes_d.aug$.cluster, simulate.p.value=TRUE)
+vc2 <- lsr::cramersV(peoes_d.aug$Natureza,         peoes_d.aug$.cluster, simulate.p.value=TRUE)
+vc3 <- lsr::cramersV(peoes_d.aug$Acções.Peão,      peoes_d.aug$.cluster, simulate.p.value=TRUE) ## não é significativo
+vc4 <- lsr::cramersV(peoes_d.aug$Lesões.a.30.dias, peoes_d.aug$.cluster, simulate.p.value=TRUE)
+(cramersV_vct <- c("Tipo Natureza"=vc1,"Natureza"=vc2,"Acções Peão"=vc3,"Lesões a 30 dias"=vc4) %>% round(4)) 
+```
+
+A única variável que não tem uma associação forte ($\varphi > 0.4$) é a variável de Ações Peão. Por essa razão, mantemos as restantes na caracterização.
+
+```{r}
+# bar plot para caracterizar cluster 1
+peoes_d.aug %>% 
+  select(Tipo.Natureza, Natureza, Acções.Peão, Lesões.a.30.dias, .cluster) -> peoes_d.aug.noD
+peoes_d.aug.noD %>% 
+  ggplot(aes(x = Tipo.Natureza, fill = .cluster)) +
+  geom_bar(position = "fill") +
+  labs(x = "Tipo de Natureza", y = "Frequência absoluta", title = "Clusters x Tipo de Natureza", subtitle = "Algoritmo PAM") +
+  scale_fill_discrete(name = "Cluster", labels = c("1", "2", "3", "4"))
+peoes_d.aug.noD %>% 
+  ggplot(aes(x = Natureza, fill = .cluster)) +
+  geom_bar(position = "fill") +
+  labs(x = "Natureza", y = "Frequência absoluta", title = "Clusters x Natureza", subtitle = "Algoritmo PAM") +
+  scale_fill_discrete(name = "Cluster", labels = c("1", "2", "3", "4")) +
+  theme(axis.text.x = element_text(angle = 90, size = 5))
+# peoes_d.aug.noD %>%
+#   ggplot(aes(x = Acções.Peão, fill = .cluster)) +
+#   geom_bar(position = "fill") +
+#   labs(x = "Acções do Peão", y = "Frequência absoluta", title = "Clusters x Acções do Peão", subtitle = "Algoritmo PAM") +
+#   scale_fill_discrete(name = "Cluster", labels = c("1", "2", "3", "4")) + 
+#   theme(axis.text.x = element_text(angle = 90, size = 5))
+peoes_d.aug.noD %>%
+  ggplot(aes(x = Lesões.a.30.dias, fill = .cluster)) +
+  geom_bar(position = "fill") +
+  labs(x = "Lesões a 30 dias", y = "Frequência absoluta", title = "Clusters x Lesões a 30 dias", subtitle = "Algoritmo PAM") +
+  scale_fill_discrete(name = "Cluster", labels = c("1", "2", "3", "4"))
+```
+
+* 1 - Peões Feridos leves e ilesos
+* 2 - Peões Mortos
+* 3 - Peões Feridos graves
+* 4 - Colisões com carros
+
+# III.4) [5 valores] Caracterize os clusters obtidos usando as restantes variáveis disponíveis em “peoes_d”. No Quiz faça upload de um resumo dos perfis dos clusters em que também inclui todas as tabelas cruzadas que ilustram as associações entre os clusters obtidos e as variáveis de interesse (sejam ou não variáveis base de agrupamento). 
+
+```{r}
+table(peoes_d.aug.noD$.cluster, peoes_d.aug.noD$Acções.Peão) %>% t() %>% prop.table(.,2) %>% round(4)*100
+table(peoes_d.aug.noD$.cluster, peoes_d.aug.noD$Natureza) %>% t() %>% prop.table(.,2) %>% round(4)*100
+table(peoes_d.aug.noD$.cluster, peoes_d.aug.noD$Tipo.Natureza) %>% t() %>% prop.table(.,2) %>% round(4)*100
+table(peoes_d.aug.noD$.cluster, peoes_d.aug.noD$Lesões.a.30.dias) %>% t() %>% prop.table(.,2) %>% round(4)*100
+```
+
+No cluster 1 predominam atropelamentos, cerca de 99.2%, dos quais se destacam atropelamentos de peões e atropelamentos com fuga. Este cluster, tal como foi caracterizado, refere-se sobretudo a feridos leves e ocorrem principalmente em passagens sinalizadas, a menos de 50m de passagens de peões e em faixas de rodagem.
+
+Tal como no cluster 1, nos clusters 2 e 3 predominam atropelamentos de peões, contudo nestes a originar na totalidade (100%) mortos e feridos graves, respetivamente. Para além disso, em termos de Ações de peão, predominam os mesmos que os mencionados para o cluster 1. Nestes três clusters também são presentes situações de despite, mas em pequenas proporções.
+
+O cluster 4 diverge dos restantes porque remete para colisões e tem ferimentos de todos os tipos, predominado por feridos leves. Quanto a Ações de peões, para este cluster, predominam ao atravessar passagens sinalizadas, em faixas de rodagem e transição pela berma ou passeio.
+

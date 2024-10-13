@@ -1,0 +1,650 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+conflicted::conflict_prefer("year", "lubridate")
+conflicted::conflict_prefer("month", "lubridate")
+
+
+acidentes <- arrow::read_parquet(here("data", "nomes_marotos", "acidentes.parquet"))
+condutores <- arrow::read_parquet(here("data", "nomes_marotos", "condutores.parquet"))
+passageiros <- arrow::read_parquet(here("data", "nomes_marotos", "passageiros.parquet"))
+peoes <- arrow::read_parquet(here("data", "nomes_marotos", "peoes.parquet"))
+list(acidentes, condutores, passageiros, peoes)
+```
+Dados rápidos sobre os dados, pra ter uma noção do que temos
+
+
+```{r}
+# skim them
+# lapply(dfs, \(x) skimr::skim(x))
+```
+
+Podemos obervar várias coisas: 
+* Colunas com tipos errados (especialmente de caracther) pelo qual vamos ter de corrigir;
+* As últimas colunas parecem ser dummies de grupo estário, mas com valores de máximo não esperado;
+Depois de resolver estes problemas, vai ser feita uma análise de cada coluna individualmente e da sua importância à priori.
+
+```{r}
+# join year to every table
+acidentes %<>% mutate(year = year(datetime))
+condutores %<>% left_join(acidentes %>% select(idAcidente, year), by = "idAcidente")
+passageiros %<>% left_join(acidentes %>% select(idAcidente, year), by = "idAcidente")
+peoes %<>% left_join(acidentes %>% select(idAcidente, year), by = "idAcidente")
+```
+
+
+```{r}
+# check if dummies are valid
+condutores %>% 
+  select(starts_with("GE")) %>% 
+  reframe(n_idades = rowSums(.)) %>% 
+  dplyr::count(n_idades, sort = T) %>%
+  mutate(perc = round(n / sum(n), 4))
+        
+# for the others too
+passageiros %>% 
+  select(starts_with("GE")) %>% 
+  reframe(n_idades = rowSums(.)) %>% 
+  dplyr::count(n_idades, sort = T) %>% 
+  mutate(perc = round(n / sum(n), 4))
+
+peoes %>%
+  select(starts_with("GE")) %>% 
+  reframe(n_idades = rowSums(.)) %>% 
+  dplyr::count(n_idades, sort = T) %>% 
+  mutate(perc = round(n / sum(n), 4))
+
+```
+
+As idades dos condutores estão poucas sem idades, e muito poucas com multiplas idades.
+Não há nenhuma idade de passageiro em falta, mas há algumas com multiplas idades.
+As idades dos peões estão todas certas.
+
+```{r}
+condutores %>% select(starts_with("GE")) %>% names
+```
+
+Há uma categoria missing (GE-Condutor_entre60e64), vamos assumir que ser esses que são 0, e aqueles que são 2 vamos
+
+```{r}
+# options: [1] "GE-Contudor_menosOu5"   "GE-Contudor_entre6e9"   "GE-Contudor_entre10e14"
+#  [4] "GE-Contudor_entre15e17" "GE-Contudor_entre18e20" "GE-Contudor_entre21e24"
+#  [7] "GE-Contudor_entre25e29" "GE-Contudor_entre30e34" "GE-Contudor_entre35e39"
+# [10] "GE-Contudor_entre40e44" "GE-Contudor_entre45e49" "GE-Contudor_entre50e54"
+# [13] "GE-Contudor_entre55e59" "GE-Condutor_entre65e69" "GE-Condutor_entre70e74"
+# [16] "GE-Condutor_maisOu75"   "GE-Condutor_naoDef"
+
+condutores %>% 
+  mutate(n_idades = select(., starts_with("GE")) %>% rowSums()) %>% 
+  mutate(`GE-Condutor_entre60e64` = if_else(n_idades == 0, T, F)) %>%
+  # change where true to name of col if True
+  mutate(grupo_etario = 
+    fcase(
+      `GE-Contudor_menosOu5`, "< 5",
+      `GE-Contudor_entre6e9`, "6 - 9",
+      `GE-Contudor_entre10e14`, "10 - 14",
+      `GE-Contudor_entre15e17`, "15 - 17",
+      `GE-Contudor_entre18e20`, "18 - 20",
+      `GE-Contudor_entre21e24`, "21 - 24",
+      `GE-Contudor_entre25e29`, "25 - 29",
+      `GE-Contudor_entre30e34`, "30 - 34",
+      `GE-Contudor_entre35e39`, "35 - 39",
+      `GE-Contudor_entre40e44`, "40 - 44",
+      `GE-Contudor_entre45e49`, "45 - 49",
+      `GE-Contudor_entre50e54`, "50 - 54",
+      `GE-Contudor_entre55e59`, "55 - 59",
+      `GE-Condutor_entre60e64`, "60 - 64",
+      `GE-Condutor_entre65e69`, "65 - 69",
+      `GE-Condutor_entre70e74`, "70 - 74",
+      `GE-Condutor_maisOu75`, "> 75",
+      `GE-Condutor_naoDef`, NA_character_,
+      default = NA_character_
+    ) %>% factor(levels = c("< 5", "6 - 9", "10 - 14", "15 - 17", "18 - 20", "21 - 24", "25 - 29", "30 - 34", "35 - 39", "40 - 44", "45 - 49", "50 - 54", "55 - 59", "60 - 64", "65 - 69", "70 - 74", "> 75"))
+  ) %>% 
+  select(-n_idades, -starts_with("GE")) -> condutoresGE
+
+condutoresGE %>% dplyr::count(grupo_etario) %>% arrange(grupo_etario) %>% mutate(perc = round(n / sum(n), 4))
+
+```
+
+
+```{r}
+# a mesma coisa para os peoes e passageiros
+passageiros %>% 
+  mutate(n_idades = select(., starts_with("GE")) %>% rowSums()) %>% 
+  mutate(`GE-Passageiro_entre60e64` = if_else(n_idades == 0, T, F)) %>%
+  # change where true to name of col if True
+  mutate(grupo_etario = 
+    fcase(
+      `GE-Passageiro_menosOu5`, "< 5",
+      `GE-Passageiro_entre6e9`, "6 - 9",
+      `GE-Passageiro_entre10e14`, "10 - 14",
+      `GE-Passageiro_entre15e17`, "15 - 17",
+      `GE-Passageiro_entre18e20`, "18 - 20",
+      `GE-Passageiro_entre21e24`, "21 - 24",
+      `GE-Passageiro_entre25e29`, "25 - 29",
+      `GE-Passageiro_entre30e34`, "30 - 34",
+      `GE-Passageiro_entre35e39`, "35 - 39",
+      `GE-Passageiro_entre40e44`, "40 - 44",
+      `GE-Passageiro_entre45e49`, "45 - 49",
+      `GE-Passageiro_entre50e54`, "50 - 54",
+      `GE-Passageiro_entre55e59`, "55 - 59",
+      `GE-Passageiro_entre60e64`, "60 - 64",
+      `GE-Passageiro_entre65e69`, "65 - 69",
+      `GE-Passageiro_entre70e74`, "70 - 74",
+      `GE-Passageiro_maisOu75`, "> 75",
+      `GE-Passageiro_naoDef`, NA_character_,
+      default = NA_character_
+    ) %>% factor(levels = c("< 5", "6 - 9", "10 - 14", "15 - 17", "18 - 20", "21 - 24", "25 - 29", "30 - 34", "35 - 39", "40 - 44", "45 - 49", "50 - 54", "55 - 59", "60 - 64", "65 - 69", "70 - 74", "> 75"))
+  ) %>%
+  select(-n_idades, -starts_with("GE")) -> passageirosGE
+
+passageirosGE %>% dplyr::count(grupo_etario) %>% arrange(grupo_etario) %>% mutate(perc = round(n / sum(n), 4))
+
+peoes %>% 
+  mutate(n_idades = select(., starts_with("GE")) %>% rowSums()) %>% 
+  mutate(`GE-Peão_entre60e64` = if_else(n_idades == 0, T, F)) %>%
+  # change where true to name of col if True
+  mutate(grupo_etario = 
+    fcase(
+      `GE-Peao_menosOu5`, "< 5",
+      `GE-Peao_entre6e9`, "6 - 9",
+      `GE-Peao_entre10e14`, "10 - 14",
+      `GE-Peao_entre15e17`, "15 - 17",
+      `GE-Peao_entre18e20`, "18 - 20",
+      `GE-Peao_entre21e24`, "21 - 24",
+      `GE-Peao_entre25e29`, "25 - 29",
+      `GE-Peao_entre30e34`, "30 - 34",
+      `GE-Peao_entre35e39`, "35 - 39",
+      `GE-Peao_entre40e44`, "40 - 44",
+      `GE-Peao_entre45e49`, "45 - 49",
+      `GE-Peao_entre50e54`, "50 - 54",
+      `GE-Peao_entre55e59`, "55 - 59",
+      `GE-Peao_entre60e64`, "60 - 64",
+      `GE-Peao_entre65e69`, "65 - 69",
+      `GE-Peao_entre70e74`, "70 - 74",
+      `GE-Peao_maisOu75`, "> 75",
+      `GE-Peao_naoDef`, NA_character_,
+      default = NA_character_
+    ) %>% factor(levels = c("< 5", "6 - 9", "10 - 14", "15 - 17", "18 - 20", "21 - 24", "25 - 29", "30 - 34", "35 - 39", "40 - 44", "45 - 49", "50 - 54", "55 - 59", "60 - 64", "65 - 69", "70 - 74", "> 75"))
+  ) %>%
+  select(-n_idades, -starts_with("GE")) -> peoesGE
+
+peoesGE %>% dplyr::count(grupo_etario) %>% arrange(grupo_etario) %>% mutate(perc = round(n / sum(n), 4))
+```
+
+```{r}
+# TODO aqui um grafico de barras ficava bem
+```
+
+```{r}
+condutoresF <- condutoresGE %>% 
+  mutate(
+    anoMatricula = ifelse(anoMatricula < 1900, NA_integer_, anoMatricula),
+    lesaoCondutor = lesaoCondutor %>% fct_relevel("Ileso", "Ferido leve", "Ferido grave", "Morto"),
+    # categoriaVeiculo tem desconhecido spearado de n definido
+    feztesteAlcol   = if_else(testeAlcool %>% str_starts("Submetido"), T, F),
+    eraEspecial     = if_else(is.na(tipoVeiculoEspecial), F, T),
+    deficienciaPneu = if_else(estadoPneus %>% str_starts("Com"), T, F),
+    tinhaSeguro     = if_else(seguroVeiculo %>% str_starts("Não"), F, T),
+  ) %>% 
+    group_by(idAcidente) %>% 
+    mutate(idCondutor = row_number(idAcidente)) %>% 
+    ungroup() %>% 
+    relocate(idAcidente, idCondutor) %>%
+    arrange(idCondutor) %>% arrange(idAcidente) %>% 
+    select(-year)
+condutoresF %>% 
+  select(feztesteAlcol, eraEspecial, deficienciaPneu, tinhaSeguro) %>% 
+  summary
+condutoresF
+```
+
+```{r}
+acidentes %>% dplyr::count(condEstrada) %>% arrange(desc(n)) %>% mutate(perc = round(n / sum(n), 4))
+```
+
+```{r}
+acidentes$interseccao %>% table() %>% prop.table() %>% round(3)
+```
+
+```{r}
+acidentesF <- acidentes %>% 
+  mutate(
+    condEstradaLumped = condEstrada %>% fct_lump_n(1),
+    GNR_PSP = GNR_PSP %>% as_factor(),
+  ) %>% 
+  select(-year)
+acidentesF %>% dplyr::count(condEstradaLumped) %>% arrange(desc(n)) %>% mutate(perc = round(n / sum(n), 4))
+```
+
+```{r}
+passageirosGE %>% left_join(acidentesF, by = "idAcidente") %>% filter(distrito.x != distrito.y | concelho.x != concelho.y) %>% nrow
+```
+Os distritos dos passageiros é onde aconteceu, não de onde eles são
+
+
+```{r}
+passageirosF <- passageirosGE %>% 
+  select(-GNR_PSP, -distrito, -concelho, -year) %>% 
+  relocate(idAcidente, idPassageiro) %>%
+  arrange(idPassageiro) %>% arrange(idAcidente) 
+passageirosF
+```
+
+
+```{r}
+peoesGE %>% left_join(acidentesF, by = "idAcidente") %>% filter(distrito.x != distrito.y | concelho.x != concelho.y) %>% nrow
+```
+Mesma coisa com os peões
+
+```{r}
+peoesF <- peoesGE %>% 
+  group_by(idAcidente) %>% 
+  mutate(idPeao = row_number(idAcidente)) %>%
+  ungroup() %>%
+  relocate(idAcidente, idPeao) %>%
+  arrange(idPeao) %>% arrange(idAcidente) %>%
+  select(-year, -GNR_PSP, -distrito, -concelho)
+peoesF
+```
+
+Npassageiros
+Npeoes
+Nveiculos
+
+```{r}
+passageirosF %>% 
+  select(idAcidente, idPassageiro) %>% 
+  group_by(idAcidente) %>%
+  summarise(nPassageiros = n()) -> nPassageiros
+peoesF %>% 
+  select(idAcidente, idPeao) %>% 
+  group_by(idAcidente) %>%
+  summarise(nPeoes = n()) -> nPeoes
+condutoresF %>%
+  select(idAcidente, idCondutor) %>% 
+  group_by(idAcidente) %>%
+  summarise(nVeiculos = n()) -> nVeiculos
+# where is NA it should become 0
+acidentesFF <- acidentesF %>% 
+  left_join(nPassageiros, by = "idAcidente") %>% 
+  left_join(nPeoes, by = "idAcidente") %>% 
+  left_join(nVeiculos, by = "idAcidente") %>% 
+  mutate(
+    nPassageiros = if_else(is.na(nPassageiros), 0, nPassageiros),
+    nPeoes = if_else(is.na(nPeoes), 0, nPeoes),
+    nVeiculos = if_else(is.na(nVeiculos), 0, nVeiculos),
+  )
+acidentesFF %>% arrange(desc(datetime)) %>%  select(idAcidente, datetime, nPassageiros, nPeoes, nVeiculos) 
+acidentesFF %>% select(nPassageiros, nPeoes, nVeiculos) %>% skimr::skim()
+
+```
+
+sitios com carros nulos
+
+```{r}
+# eg: 20201820097
+
+acidentesFF %>% filter(idAcidente == 20201820097) %>% t()
+```
+
+nsei, whtv
+
+
+
+Lat and long
+
+
+```{r}
+# ver as latitudes e longitudes
+acidentesFF %>% 
+  arrange(desc(datetime)) %>% 
+  #filter(distrito == "Viseu") %>% 
+  select(datetime, Latitude, Longitude, GNR_PSP)
+
+# filtrar pelos que a longitude e latitude são NA
+acidentesFF %>% 
+  arrange(desc(datetime)) %>% 
+  #filter(distrito == "Viseu") %>% 
+  filter(Longitude %>% is.na | Latitude %>% is.na) %>% 
+  mutate(year = year(datetime)) %>% 
+  group_by(year) %>% 
+  summarise(
+    n = n(), 
+    prop = n / nrow(.), 
+    propTotal = n / nrow(acidentesFF)
+  ) %>%
+  # prop by year
+  left_join(
+    acidentesFF %>% 
+  #    filter(distrito == "Viseu") %>% 
+      group_by(year = year(datetime)) %>% 
+      summarise(nTotalYear = n()), 
+    by = "year") %>% 
+  mutate(propYear = n / nTotalYear) %>% 
+  select(
+    year = year,
+    `N acidentes` = nTotalYear,
+    `N acidentes com lat/long NAs` = n,
+    `prop acidentes com lat/long NAs` = prop,
+    `prop acidentes com lat/long NAs sobre o total de acidentes` = propTotal,
+    `prop acidentes com lat/long NAs sobre o total de acidentes/ano` = propYear
+  ) 
+# a mesma coisa so que com longitude ou lat == 0
+
+acidentesFF %>% 
+  arrange(desc(datetime)) %>% 
+  #filter(distrito == "Viseu") %>% 
+  select(datetime, Latitude, Longitude, GNR_PSP) %>% 
+  filter(Longitude == 0 | Latitude == 0)
+
+acidentesFF %>% 
+  arrange(desc(datetime)) %>% 
+  #filter(distrito == "Viseu") %>% 
+  filter(Longitude == 0 | Latitude == 0) %>% 
+  mutate(year = year(datetime)) %>% 
+  group_by(year) %>% 
+  summarise(
+    n = n(), 
+    prop = n / nrow(.), 
+    propTotal = n / nrow(acidentesFF)
+  ) %>%
+  # prop by year
+  left_join(
+    acidentesFF %>% 
+      #filter(distrito == "Viseu") %>% 
+      group_by(year = year(datetime)) %>% 
+      summarise(nTotalYear = n()), 
+    by = "year") %>% 
+  mutate(propYear = n / nTotalYear) %>% 
+  select(
+    year = year,
+    `N acidentes em Viseu` = nTotalYear,
+    `N acidentes com lat/long 0` = n,
+    `prop acidentes com lat/long 0` = prop,
+    `prop acidentes com lat/long 0 sobre o total de acidentes` = propTotal,
+    `prop acidentes com lat/long 0 sobre o total de acidentes/ano` = propYear
+  )
+```
+
+São ainda alguns com invalidos por ano, ainda assim não se justifica excluir a coluna diretamente
+No entanto, há uma grande quantidade de NAs antes de 2014, ptt será melhor excluir esses anos se não se conseguir obter as localizações.
+
+So (quase) há NAs até 2013, mas são todos GNR
+Os que são 0 segue um padrão estranho, mas são todos PSP
+Podemos usar um api para obter as localizações se tiverem os sitios dos acidentes
+
+
+```{r}
+# https://operations.osmfoundation.org/policies/nominatim/
+# nominatimlite::geo_lite("rotunda da barrosa")
+```
+
+```{r}
+acidentesFF %>%
+  filter(distrito == "Viseu") %>%
+  filter(
+    is.na(Latitude) | 
+    is.na(Longitude) | 
+    Latitude == 0 |
+    Longitude == 0
+  ) %>% 
+  select(idAcidente, datetime, Latitude, Longitude, nomeRua) -> temp
+temp
+# check which nomeRua is also NA
+temp %>% 
+  filter(nomeRua %>% is.na) %>%
+  group_by(year(datetime)) %>%
+  summarise(n = n(), prop = n / nrow(.), propTotal = n / nrow(acidentesFF))
+# compared to all
+temp %>% 
+  group_by(year(datetime)) %>%
+  summarise(n = n(), prop = n / nrow(.), propTotal = n / nrow(acidentesFF))
+```
+
+Excluindo < 2014, são só 8+5 acidentes que não têm nomeRua
+
+```{r}
+# get them
+acidentesFF %>% 
+  filter(distrito == "Viseu" & nomeRua %>% is.na & year(datetime) >= 2014) %>% 
+  filter(
+    is.na(Latitude) | 
+    is.na(Longitude) | 
+    Latitude == 0 |
+    Longitude == 0
+  )
+```
+nenhum é numa rotunda.
+
+
+
+
+Falta analisar aqueles fora da área de Portugal, mas estas se calhar dps de filtrar
+
+```{r}
+# NAs per month of 2019
+acidentesFF %>% 
+  filter(year(datetime) == 2019 | year(datetime) == 2018) %>% 
+  filter(
+    Latitude == 0 |
+    Longitude == 0
+  ) %>% 
+  group_by(year(datetime), month(datetime, label = T)) %>% 
+  summarise(n = n())
+```
+
+é bue interessante que as lats e longs a == 0 de 2019 começa em dezembro de 2018 e acaba em setembro de 2019
+
+rotundas
+```{r}
+acidentesFF %>% 
+  mutate(
+    rotunda = ifelse((!is.na(interseccao) & interseccao == "Em rotunda") | (!is.na(nomeRua) & nomeRua %>% stringr::str_to_lower() %>% stringr::str_detect("rotunda")), T, F)
+  ) -> rotundas
+rotundas %>%  group_by(rotunda) %>% summarise(n = n(), prop = n / nrow(.))
+
+# filtrar por viseu
+rotundas %>% 
+  filter(distrito == "Viseu") %>% 
+  group_by(rotunda) %>% summarise(n = n(), prop = n / nrow(.), propTotal = n / nrow(acidentesFF))
+```
+
+São pouquinhos mas sao ainda 500-900
+
+```{r}
+# get carlos lopes
+rotundas %>% filter(nomeRua %>% str_to_lower() %>% str_detect("carlos lopes")) %>% filter(distrito == "Viseu")
+```
+
+Todas elas têm interseccao "Em rotunda", mas cagativo
+
+```{r}
+
+acidentesFiltradoWOLATLONG <- acidentesFF %>%
+  # rotundas
+    filter(
+      (!is.na(interseccao) & interseccao == "Em rotunda") | 
+      (!is.na(nomeRua) & nomeRua %>% str_to_lower() %>%  str_detect("rotunda")) |
+      # excecao para a praca Carlos lopes
+      (distrito == "Viseu" & !is.na(nomeRua) & nomeRua %>% str_to_lower() %>% str_detect("carlos lopes"))
+    ) %>%
+  # tirar < 2014
+    filter(year(datetime) >= 2014) %>%
+  # viseu
+    mutate(EmViseu = ifelse(distrito == "Viseu", T, F)) %>%
+  # é 2019 (tem aquele problema das lats e long)
+    mutate(Em2019 = ifelse(year(datetime) == 2019, T, F))
+acidentesFiltradoWOLATLONG
+```
+
+agr as analises das lats e longs com os filtrados para facilitar
+
+Fora das caixas
+```{r}
+
+# melhor caixa é de (36.96, -9.53) até (42.15, -6.19)
+acidentesFiltradoWOLATLONG %>% 
+  filter(
+    Latitude < 36.96 |
+    Latitude > 42.15 |
+    Longitude < -9.53 |
+    Longitude > -6.19
+  ) %>% 
+  filter(!(
+    Latitude == 0 |
+    Longitude == 0
+  )) %>% 
+  select(idAcidente, datetime, Latitude, Longitude, nomeRua, distrito)
+
+minMaxLatLongPorDist <- acidentesFiltradoWOLATLONG %>% 
+  filter(
+    Latitude > 36.96 |
+    Latitude < 42.15 |
+    Longitude > -9.53 |
+    Longitude < -6.19
+  ) %>% 
+  filter(Latitude != 0 & Longitude != 0) %>% 
+  group_by(distrito) %>% 
+  summarise(
+    minLat = min(Latitude, na.rm = T), 
+    maxLat = max(Latitude, na.rm = T), 
+    minLong = min(Longitude, na.rm = T), 
+    maxLong = max(Longitude, na.rm = T)
+  )
+minMaxLatLongPorDist %>% arrange(distrito %>% as.character())
+```
+Só 5 fora da caixa, faz me pergunar quantas estão dentro da caixa mas erradas
+
+```{r}
+readxl::read_excel(here("limpeza", "distritos.xlsx")) 
+```
+
+```{r}
+readxl::read_excel(here("limpeza", "distritos.xlsx"), col_types = c("text", rep("numeric", 12))) %>%
+  rename(distrito = Distrito) %>% 
+  rowwise() %>% 
+  mutate(
+    distrito = str_split_fixed(distrito, "Distrito d[eao] ", 2)[2],
+    lat_min2 =  ifelse(lat_min2  %>% is.na, lat_min,   lat_min2),
+    long_min2 = ifelse(long_min2 %>% is.na, long_min,  long_min2),
+    lat_min3 =  ifelse(lat_min3  %>% is.na, lat_min2,  lat_min3),
+    long_min3 = ifelse(long_min3 %>% is.na, long_min2, long_min3),
+    lat_max2 =  ifelse(lat_max2  %>% is.na, lat_max,   lat_max2),
+    long_max2 = ifelse(long_max2 %>% is.na, long_max,  long_max2),
+    lat_max3 =  ifelse(lat_max3  %>% is.na, lat_max2,  lat_max3),
+    long_max3 = ifelse(long_max3 %>% is.na, long_max2, long_max3)
+  ) -> boxes
+boxes
+```
+
+
+```{r}
+isInside <- function(Lat, Long, minLat, maxLat, minLong, maxLong) {
+  Lat > minLat & Lat < maxLat & Long > minLong & Long < maxLong
+}
+
+# check if they are inside first
+acidentesFiltradoWOLATLONG %>% 
+  filter(
+    Latitude > 36.96 |
+    Latitude < 42.15 |
+    Longitude > -9.53 |
+    Longitude < -6.19
+  ) %>% 
+  filter(!(
+    Latitude == 0 |
+    Longitude == 0
+  )) %>%
+  left_join(boxes, by = "distrito") %>%
+  filter(!(
+    isInside(Latitude, Longitude, lat_min, lat_max, long_min, long_max) | 
+    isInside(Latitude, Longitude, lat_min2, lat_max2, long_min2, long_max2) | 
+    isInside(Latitude, Longitude, lat_min3, lat_max3, long_min3, long_max3)
+  )) %>% select(idAcidente, distrito, freguesia, nomeRua, Latitude, Longitude, lat_min, lat_max, long_min, long_max, Latitude, Longitude, lat_min2, lat_max2, long_min2, long_max2, Latitude, Longitude, lat_min3, lat_max3, long_min3, long_max3) -> acidentesComCordenadasErradas
+
+acidentesComCordenadasErradas
+# count and prop
+acidentesComCordenadasErradas %>% 
+  group_by(distrito) %>% 
+  summarise(
+    n = n(),
+    prop = n() / (acidentesFiltradoWOLATLONG %>% rename(distritoAcidente = "distrito") %>% filter(distritoAcidente == distrito) %>% nrow())
+  ) %>% arrange(desc(prop))
+
+(acidentesComCordenadasErradas %>% nrow()) / (acidentesFiltradoWOLATLONG %>% nrow()) %>% tibble()
+```
+
+há bue pontos fora das areas (10%), o que implica que há bue pontos com lat e long erradas
+
+eu tirava as coordenadas mas sei lá, o que vou fazer é normalizar baseado nas caixas do botas
+
+
+```{r}
+boxesMin <- boxes %>%
+  rowwise() %>%
+  mutate(lat_min = min(c(lat_min, lat_min2, lat_min3), na.rm = T),
+         lat_max = max(c(lat_max, lat_max2, lat_max3), na.rm = T),
+         long_min = min(c(long_min, long_min2, long_min3), na.rm = T),
+         long_max = max(c(long_max, long_max2, long_max3), na.rm = T)) %>%
+  select(distrito, lat_min, lat_max, long_min, long_max)
+
+acidentesFiltradoWOLATLONG %>% 
+  # lat e long (tirar os lang e long invalidos a nao ser que seja 2019)
+    filter(!(
+      !Em2019 & (
+        is.na(Latitude) | 
+        is.na(Longitude) | 
+        Latitude == 0 |
+        Longitude == 0
+      )
+    )) %>%
+  # normalize lat and long
+    mutate(
+      minmaxLatPort = (Latitude - min(.$Latitude)) / (max(.$Latitude) - min(.$Latitude)),
+      minmaxLongPort = (Longitude - min(.$Longitude)) / (max(.$Longitude) - min(.$Longitude))
+    ) %>% 
+  # join with boxes
+    left_join(boxesMin, by = "distrito") %>%
+    mutate(
+      minmaxLatDist = (Latitude - lat_min) / (lat_max - lat_min),
+      minmaxLongDist = (Longitude - long_min) / (long_max - long_min)
+    ) %>%
+    select(-lat_min, -lat_max, -long_min, -long_max) %>%
+  # round lats
+    mutate(
+      LatitudeAprox = round(Latitude, 2),
+      LongitudeAprox = round(Longitude, 2),
+      minmaxLatPort = round(minmaxLatPort, 2),
+      minmaxLongPort = round(minmaxLongPort, 2),
+      minmaxLatDist = round(minmaxLatDist, 2),
+      minmaxLongDist = round(minmaxLongDist, 2)
+    ) %>%
+    select(-kmDaEstrada, -sentidoAutoEstrada) %>%
+  # se é capital
+    mutate(isCapital = distrito == concelho) -> acidentesFiltrado
+acidentesFiltrado
+```
+
+As proximas features e melhor noutro lugar?
+
+```{r}
+if (TRUE) {
+  write_parquets(
+    "cleaned",
+    acidentesFiltrado, condutoresF, passageirosF, peoesF,
+    substitute = FALSE
+  )
+}
+```
+
+```{r}
+# check if wrote
+arrow::read_parquet(here("data", "cleaned", "acidentes.parquet"))
+```
+

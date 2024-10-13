@@ -1,0 +1,1 @@
+"0","Data <-read.csv(""condutores.csv"", header=TRUE, stringsAsFactors = T, sep="","",dec="","",check.names=F,na.strings=c(""NA"",""NÃO DEFINIDO""),fileEncoding = ""utf-8"")"

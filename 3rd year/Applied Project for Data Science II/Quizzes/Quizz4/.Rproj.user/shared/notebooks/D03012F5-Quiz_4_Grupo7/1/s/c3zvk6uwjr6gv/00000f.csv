@@ -1,0 +1,7 @@
+"0","# portugal distribuição pelos 4 distritos (Leiria, Lisboa, Santarém, Setúbal)"
+"0","portugal %>%"
+"0","  ggplot() +"
+"0","  geom_sf() +"
+"0","  geom_point(data = df.clusters, alpha = 1, size = 1, aes(x = Longitude.GPS, y = Latitude.GPS, color = Distrito)) +"
+"0","  coord_sf(xlim = c(-10, -7), ylim = c(37.7, 40.1)) +"
+"0","  theme_bw()"

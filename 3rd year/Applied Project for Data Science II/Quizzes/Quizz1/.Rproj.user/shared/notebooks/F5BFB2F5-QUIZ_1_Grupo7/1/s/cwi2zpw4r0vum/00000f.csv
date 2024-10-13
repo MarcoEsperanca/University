@@ -1,0 +1,4 @@
+"0","# Remover tudo!"
+"0","rm(list = ls())"
+"0","# Incluir as libraries de que necessita"
+"0","pacman::p_load(VIM, tidyverse, conflicted, skimr, ggplot2, lsr, lubridate, nycflights13, tidyverse)"

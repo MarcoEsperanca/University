@@ -1,0 +1,104 @@
+"0","# mapa"
+"0","pak::pak(""ropensci/rnaturalearthhires"")"
+"2",""
+"2"," "
+"2","[33m![39m Using bundled GitHub PAT. Please add your own PAT using `gitcreds::gitcreds_set()`.
+"
+"2",""
+"2"," Found [30m[48;5;249m 1 [49m[39m deps for [30m[48;5;249m 0/1 [49m[39m pkgs [⠋] Resolving ropensci/rnaturalearthhires"
+"2"," Found [30m[48;5;249m 1 [49m[39m deps for [30m[48;5;249m 0/1 [49m[39m pkgs [⠙] Resolving ropensci/rnaturalearthhires"
+"2"," Found [30m[48;5;249m 1 [49m[39m deps for [30m[48;5;249m 0/1 [49m[39m pkgs [⠹] Resolving ropensci/rnaturalearthhires"
+"2"," Found [30m[48;5;249m 1 [49m[39m deps for [30m[48;5;249m 0/1 [49m[39m pkgs [⠸] Resolving ropensci/rnaturalearthhires"
+"2"," Found [30m[48;5;249m 1 [49m[39m deps for [30m[48;5;249m 0/1 [49m[39m pkgs [⠼] Resolving ropensci/rnaturalearthhires"
+"2"," Found [30m[48;5;249m 1 [49m[39m deps for [30m[48;5;249m 0/1 [49m[39m pkgs [⠴] Resolving ropensci/rnaturalearthhires"
+"2","Checking for 15 new metadata files                                      "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠦] Checking installed packages"
+"2","⠋ Updating metadata database [0/15] | Downloading [0 B / 0 B] "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠧] Resolving standard (CRAN/BioC) packages"
+"2","⠙ Updating metadata database [0/15] | Downloading [0 B / 0 B]             "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠇] Resolving standard (CRAN/BioC) packages"
+"2","⠹ Updating metadata database [0/15] | Downloading [0 B / 0 B]             "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠏] Resolving standard (CRAN/BioC) packages"
+"2","⠸ Updating metadata database [0/15] | Downloading [81.71 kB / 2.15 MB]    "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠋] Resolving standard (CRAN/BioC) packages"
+"2","⠼ Updating metadata database [0/15] | Downloading [581.58 kB / 2.15 MB]   "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠙] Resolving standard (CRAN/BioC) packages"
+"2","⠴ Updating metadata database [0/15] | Downloading [1.17 MB / 2.15 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠹] Resolving standard (CRAN/BioC) packages"
+"2","⠦ Updating metadata database [0/15] | Downloading [1.79 MB / 2.16 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠸] Resolving standard (CRAN/BioC) packages"
+"2","⠧ Updating metadata database [0/15] | Downloading [2.15 MB / 2.16 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠼] Resolving standard (CRAN/BioC) packages"
+"2","⠇ Updating metadata database [2/15] | Downloading [2.15 MB / 2.15 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠴] Resolving standard (CRAN/BioC) packages"
+"2","⠏ Updating metadata database [3/15] | Downloading [2.15 MB / 2.15 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠦] Resolving standard (CRAN/BioC) packages"
+"2","⠋ Updating metadata database [3/15] | Downloading [2.16 MB / 3.39 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠧] Resolving standard (CRAN/BioC) packages"
+"2","⠙ Updating metadata database [3/15] | Downloading [2.20 MB / 3.39 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠇] Resolving standard (CRAN/BioC) packages"
+"2","⠹ Updating metadata database [3/15] | Downloading [2.25 MB / 3.39 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠏] Resolving standard (CRAN/BioC) packages"
+"2","⠸ Updating metadata database [3/15] | Downloading [2.36 MB / 4.87 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠋] Resolving standard (CRAN/BioC) packages"
+"2","⠼ Updating metadata database [3/15] | Downloading [2.63 MB / 5.10 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠙] Resolving standard (CRAN/BioC) packages"
+"2","⠴ Updating metadata database [3/15] | Downloading [3.11 MB / 5.10 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠹] Resolving standard (CRAN/BioC) packages"
+"2","⠦ Updating metadata database [3/15] | Downloading [3.63 MB / 5.10 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠸] Resolving standard (CRAN/BioC) packages"
+"2","⠧ Updating metadata database [3/15] | Downloading [3.97 MB / 5.10 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠼] Resolving standard (CRAN/BioC) packages"
+"2","⠇ Updating metadata database [3/15] | Downloading [4.44 MB / 5.10 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠴] Resolving standard (CRAN/BioC) packages"
+"2","⠏ Updating metadata database [3/15] | Downloading [4.58 MB / 5.10 MB]     "
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠦] Resolving standard (CRAN/BioC) packages"
+"2","⠋ Updating metadata database [3/15] | Downloading [5.07 MB / 5.10 MB]     "
+"2","[32m✔[39m Updated metadata database: 5.10 MB in 12 files.                    "
+"2","
+"
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠦] Resolving standard (CRAN/BioC) packages"
+"2","                                                                           "
+"2","[36mℹ[39m R 4.3 x86_64-apple-darwin20 packages are missing from Bioconductor
+"
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠦] Resolving standard (CRAN/BioC) packages"
+"2","[36mℹ[39m Updating metadata database                                              "
+"2","[32m✔[39m Updating metadata database ... done"
+"2","
+"
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠦] Resolving standard (CRAN/BioC) packages"
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠧] Resolving standard (CRAN/BioC) packages"
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠇] Resolving standard (CRAN/BioC) packages"
+"2"," Found [30m[48;5;249m 3 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠏] Resolving standard (CRAN/BioC) packages"
+"2"," Found [30m[48;5;249m 12 [49m[39m deps for [30m[48;5;249m 1/1 [49m[39m pkgs [⠋] Resolving standard (CRAN/BioC) packages"
+"2","                                                                            "
+"2"," 
+"
+"2","[36mℹ[39m No downloads are needed
+"
+"2",""
+"2"," "
+"2","Installing..."
+"2","              "
+"2","[32m✔[39m 1 pkg + 2 deps: kept 2 [38;5;249m[38;5;249m[19.5s][38;5;249m[39m
+"
+"0","library(rnaturalearth)"
+"2","The legacy packages maptools, rgdal, and rgeos, underpinning the sp package,
+which was just loaded, will retire in October 2023.
+Please refer to R-spatial evolution reports for details, especially
+https://r-spatial.org/r/2023/05/15/evolution4.html.
+It may be desirable to make the sf package available;
+package maintainers should consider adding sf to Suggests:.
+The sp package is now running under evolution status 2
+     (status 2 uses the sf package in place of rgdal)
+"
+"2","Support for Spatial objects (`sp`) will be deprecated in {rnaturalearth} and will be removed in a future release of the package. Please use `sf` objects with {rnaturalearth}. For example: `ne_download(returnclass = 'sf')`
+"
+"0","portugal <- ne_states(country = ""portugal"", returnclass = ""sf"")"
+"0","portugal %>%"
+"0","  ggplot() +"
+"0","    # color districts"
+"0","  geom_sf() +"
+"0","  geom_point(data = df.clusters, alpha = 1, size = 1, aes(x = Longitude.GPS, y = Latitude.GPS, color = cluster)) +"
+"0","  coord_sf(xlim = c(-10, -7), ylim = c(37.7, 40.1)) +"
+"0","  theme_bw()"
