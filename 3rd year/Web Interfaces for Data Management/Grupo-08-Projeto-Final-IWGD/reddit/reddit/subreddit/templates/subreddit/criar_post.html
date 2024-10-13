@@ -1,0 +1,31 @@
+{% extends 'subreddit/index.html' %}
+{% load static %}
+{% block page-title %} {Criar Post em /r/nome_do_subreddit} {% endblock %}
+
+{% block content %}
+    <div class="container-criar">
+        <div class="create-subreddit-container-criar">
+            <div class="create-subreddit-header-criar">
+                <h2>Criar um novo post em {{subreddit.name}}</h2>
+            </div>
+            <div class="create-subreddit-form-criar">
+                <form action="{% url 'subreddit:criar_post' subreddit_id=subreddit.id %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group-criar">
+                        <input type="text" name="title" id="title" placeholder="Título" required>
+                    </div>
+                    <div class="form-group-criar">
+                        <textarea name="content" id="content" rows="6" placeholder="Conteúdo" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Imagem (opcional):</label>
+                        <input type="file" name="image" id="image" accept="image/*">
+                    </div>
+                    <div class="form-group-criar">
+                        <button type="submit" class="btn-criar-subreddit">Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

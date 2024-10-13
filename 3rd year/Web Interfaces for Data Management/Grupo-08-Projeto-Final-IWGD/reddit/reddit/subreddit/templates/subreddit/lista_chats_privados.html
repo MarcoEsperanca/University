@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chats Privados</title>
+    <link rel="stylesheet" href="{% static 'subreddit/css/lista_chat_styles.css' %}">
+</head>
+<body>
+    <div class="chat-container">
+        <h1>Chats Privados</h1>
+        <form method="get" action="{% url 'subreddit:lista_chats_privados' %}" class="chat-search-form">
+            <input type="text" name="search_query_participants" placeholder="Pesquisar participantes" value="{{ search_query_participants }}">
+            <button type="submit">Pesquisar</button>
+        </form>
+        <ul class="chat-list">
+            {% for participant, ultima_mensagem in ultimas_mensagens.items %}
+                <li class="chat-item">
+                    <a href="{% url 'subreddit:chat_privado' username=participant.username %}">
+                        <div class="chat-avatar">
+                            <img src="{{ participant.reddituser.profile_picture.url }}" alt="{{ participant.username }}">
+                        </div>
+                        <div class="chat-details">
+                            <div class="chat-recipient">
+                                {{ participant.username }}
+                            </div>
+                            {% if ultima_mensagem %}
+                                <div class="last-message">
+                                    Última mensagem: {{ ultima_mensagem.content }} ({{ ultima_mensagem.timestamp|date:"Y-m-d H:i:s" }})
+                                </div>
+                            {% else %}
+                                <div class="last-message">
+                                    Nenhuma mensagem neste chat.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                </li>
+            {% empty %}
+                <p>Não há utilizadores para iniciar chats privados.</p>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'subreddit:index' %}" class="back-home-index">Voltar à página inicial</a>
+    </div>
+</body>
+</html>

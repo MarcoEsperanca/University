@@ -1,0 +1,123 @@
+{% extends 'subreddit/index.html' %}
+{% load static %}
+{% block page-title %} {{subreddit.name}} {% endblock %}
+
+{% block content %}
+     <div class="container-detalhe">
+        <form method="get" action="{% url 'subreddit:filtrar_post' subreddit_id=subreddit.id %}">
+            {% csrf_token %}
+            <nav class="navbar-detalhe-subreddit">
+                <a href="{% url 'subreddit:index' %}" class="nav-link-detalhe-subreddit">Voltar</a>
+                <a href="{% url 'subreddit:subreddit_chat' subreddit_id=subreddit.id %}" class="nav-link-detalhe-subreddit">Chat</a>
+                <a href="{% url 'subreddit:criar_post' subreddit_id=subreddit.id %}" class="nav-link-detalhe-subreddit">Criar Post</a>
+            </nav>
+
+            <div class="filter-options-detalhe-subreddit">
+                <div class="center1-detalhe-subreddit">
+                    <label class="text-white-detalhe-subreddit">Posts por página: 10</label>
+                </div>
+
+                <div class="filter-align-detalhe-subreddit">
+                    <label class="text-white-detalhe-subreddit mr-1-detalhe-subreddit" for="sort_by">Ordenar por:</label>
+                    <select id="sort_by" name="sort_by" class="mr-2-detalhe-subreddit">
+                        <option value="recent" {% if request.GET.sort_by == "recent" %}selected{% endif %}>Mais recentes</option>
+                        <option value="popular" {% if request.GET.sort_by == "popular" %}selected{% endif %}>Mais populares</option>
+                    </select>
+
+                    <button id="ordenar-button" type="submit" class="botao-ordenar-detalhe-subreddit">Ordenar</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="post-list-detalhe-subreddit">
+            <div class="search-bar-detalhe-subreddit">
+                <form method="get" action="{% url 'subreddit:detalhe_subreddit' subreddit_id=subreddit.id %}">
+                    <input type="text" name="post_search" placeholder="Pesquisar posts">
+                    <button type="submit">Pesquisar</button>
+                </form>
+                {% if request.GET.post_search %}
+                    <a href="{% url 'subreddit:detalhe_subreddit' subreddit_id=subreddit.id %}" class="search-bar-button-detalhe-subreddit">
+                        Voltar à página de posts</a>
+                {% endif %}
+            </div>
+            {% if posts %}
+            <div class="posts-container-detalhe-subreddit">
+                {% for post in posts %}
+                <div class="post-detalhe-subreddit" id="post-{{ post.id }}">
+                    <div class="post-content-detalhe-subreddit">
+                        <a href="{% url 'subreddit:detalhe_post' subreddit_id=post.subreddit.id post_id=post.id %}" class="link-discreto-detalhe-subreddit">
+                            <div class="post-title-detalhe-subreddit">
+                                <h2>{{ post.title }}</h2>
+                            </div>
+                        </a>
+                        <div class="post-meta-detalhe">
+                                <span class="text-muted-detalhe-subreddit">Autor: </span><span class="author-detalhe-subreddit"><a href="{% url 'subreddit:perfil' username=post.author.username %}" class="link-discreto-detalhe-subreddit">{{ post.author }}</a></span>
+                            {% if post.author.reddituser.profile_picture %}
+                                    <img src="{{ post.author.reddituser.profile_picture.url }}" alt="Foto do utilizador" class ="foto-user-detalhe">
+                                {% endif %}
+                            <br>
+                                <span class="timestamp-detalhe-subreddit">Publicado em: {{ post.pub_data|date:"d/m/Y H:i:s" }}</span>
+                            </div>
+                    </div>
+                    <br><br>
+                    <a href="javascript:void(0);" class="btn-comment-reddit-detalhe" onclick="toggleCommentBox(this)">Comentar</a>
+                    <div class="comment-box-detalhe">
+                        <form action="{% url 'subreddit:criar_comentario' subreddit_id=post.subreddit.id post_id=post.id %}" method="post">
+                            {% csrf_token %}
+                            <br> <textarea name="content" id="content" rows="3" placeholder="Escreva o seu comentário..." required></textarea> <br>
+                            <button type="submit" class="btn-comment-reddit-detalhe">Enviar Comentário</button>
+                        </form>
+                    </div>
+                    {% if request.user.is_superuser or user.is_authenticated and user == post.author %}
+                        <a href="{% url 'subreddit:delete_post' subreddit_id=post.subreddit.id post_id=post.id %}" class="btn-delete-post-detalhe-subreddit">Apagar</a>
+                    {% endif %}
+                    <div class="vote-buttons-detalhe-subreddit">
+                        <form method="POST" action="{% url 'subreddit:vote_post' subreddit_id=post.subreddit.id post_id=post.id %}">
+                            {% csrf_token %}
+                            <button type="submit" name="vote_type" value="like" class="vote-button-detalhe like-button-detalhe" onclick="this.classList.add('jump-animation'); setTimeout(() => this.classList.remove('jump-animation'), 500)">
+                                <img src="{% static 'subreddit/img/like.png' %}" alt="Like">
+                            </button>
+                            <span class="Nlikes-detalhe">{{ post.likes }}</span>
+                            <span class="span-black">|</span> <!-- Barra vertical para separar os ícones -->
+                            <button type="submit" name="vote_type" value="dislike" class="vote-button-detalhe dislike-button-detalhe" onclick="this.classList.add('sad-animation'); setTimeout(() => this.classList.remove('sad-animation'), 500)">
+                                <img src="{% static 'subreddit/img/dislike.png' %}" alt="Dislike">
+                            </button>
+                            <span class="Ndislikes-detalhe">{{ post.dislikes }}</span>
+                        </form>
+                    </div>
+                    <div class="comment-box-detalhe">
+                        <form action="{% url 'subreddit:criar_comentario' subreddit_id=post.subreddit.id post_id=post.id %}" method="post">
+                            {% csrf_token %}
+                            <br> <textarea> name "comment" rows="3" placeholder="Escreva o seu comentário..." required></textarea> <br>
+                            <button type="submit" class="btn-comment-reddit-detalhe">Enviar Comentário</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="pagination">
+                <span class="step-links">
+                    {% if posts.has_previous %}
+                        <a href="?page=1">&laquo; primeira</a>
+                        <a href="?page={{ posts.previous_page_number }}">anterior</a>
+                    {% endif %}
+
+                    <span class="current-page">
+                        Página {{ posts.number }} de {{ posts.paginator.num_pages }}
+                    </span>
+
+                    {% if posts.has_next %}
+                        <a href="?page={{ posts.next_page_number }}">seguinte</a>
+                        <a href="?page={{ posts.paginator.num_pages }}">última &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+            {% else %}
+            <div class="no-posts-detalhe-subreddit">
+                <p>Ainda não existem posts neste subreddit!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script src="{% static 'subreddit/js/comment_button.js' %}"></script>
+{% endblock %}

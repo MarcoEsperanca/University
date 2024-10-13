@@ -1,0 +1,30 @@
+{% extends 'subreddit/index.html' %}
+{% load static %}
+{% block page-title %} {Page not found} {% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="left-section">
+        <div class="error-content">
+            <h1>Oops! <br><br> Parece que se perdeu...</h1>
+            <a href="{% url 'subreddit:index' %}" class="btn btn-primary">Voltar para a Página Inicial</a>
+        </div>
+        <div class="error-details">
+            <h2>Detalhes do Erro</h2>
+            <ul>
+                <li><strong>Código do Erro:</strong> 404</li>
+                <li><strong>Data e Hora:</strong> <span id="current-time"></span></li>
+                <li><strong>URL Solicitada:</strong> {{ request.path_info }}</li>
+            </ul>
+        </div>
+    </div>
+    <div class="divider"></div>
+    <div class="right-section-404">
+        <div class="error-image">
+            <img src="{% static 'subreddit/img/wow-cutout.png' %}" alt="Error Icon">
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'subreddit/js/hora_update.js' %}"></script>
+{% endblock %}

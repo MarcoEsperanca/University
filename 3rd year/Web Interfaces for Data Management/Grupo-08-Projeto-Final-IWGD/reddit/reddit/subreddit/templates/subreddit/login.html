@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+{% load static %}
+{% load socialaccount %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="x-icon" href="{% static 'subreddit/img/serit_logo.png' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'subreddit/css/sign.css' %}">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="{% static 'subreddit/img/serit_logo-cutout.png' %}" alt="Serit Logo">
+        </div>
+        <div class="sign-form">
+            <h2>Login</h2>
+            {% if error_message %}
+                <br/>
+                <p class="error-message">{{ error_message }}</p>
+            {% else %}
+                <br/>
+            {% endif %}
+            <form action="{% url 'subreddit:login' %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Nome de utilizador:</label>
+                    <input type="text" name="username" placeholder="username" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha:</label>
+                    <input type="password" name="password" placeholder="password" id="password" required>
+                </div>
+                <!-- Campo do reCAPTCHA (obrigatório e com callback) -->
+                <div class="captcha-container text-center">
+                    <div class="g-recaptcha" data-sitekey="6Lf5eYooAAAAAMFeToVnju1T74nrOyq256ejv1m3" data-callback="enableSubmit"></div>
+                </div>
+                <!-- Botão de envio desabilitado inicialmente -->
+                <button type="submit" class="btn-login" id="submit-btn-registo" disabled>Entrar</button>
+
+                <br> <h2> Google Login </h2>
+                <a href="{% provider_login_url 'google' %}?next=/" class="btn-login-google" > Login com a conta Google</a>
+            </form>
+
+            <div class="signup-link text-center mt-3">
+                Ainda não tem uma conta? <a href="{% url 'subreddit:registo' %}">Registe-se</a>
+            </div>
+        </div>
+    </div>
+
+<script src="{% static 'subreddit/js/login_scripts.js' %}"></script>
+</body>
+
+</html>

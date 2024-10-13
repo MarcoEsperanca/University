@@ -1,0 +1,146 @@
+body {
+    background: #3B3B45;
+    font: 14px/20px "Lato", Arial, sans-serif;
+    padding: 40px 0;
+    color: white;
+}
+
+.chat-container {
+    width: 80%;
+    margin: 0 auto;
+}
+
+.messages {
+    list-style: none;
+    padding: 0;
+}
+
+.message {
+    list-style: none;
+    margin-bottom: 20px;
+    max-width: 80%;
+    padding: 15px;
+    border-radius: 15px;
+    clear: both;
+    overflow: hidden;
+}
+
+.sent {
+    background-color: #3498db;
+    color: #fff;
+    float: left;
+}
+
+.received {
+    background-color: #e2e2e2;
+    color: #000;
+    float: right;
+}
+
+.gpt-message {
+    background-color: #27ae60;
+}
+
+.message-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.message-content-wrapper {
+    width: calc(100% - 50px);
+}
+
+.message-sender {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.message-content {
+    margin: 5px 0;
+}
+
+.message-timestamp {
+    color: #777;
+    font-size: 12px;
+}
+
+.message-form {
+    clear: both;
+    margin-top: 20px;
+}
+
+.message-form input[type="text"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    width: calc(100% - 20px);
+    border-radius: 15px;
+}
+
+.send-button,
+.back-button, .back-chat {
+    background-color: #3498db;
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 15px;
+    cursor: pointer;
+    float: left;
+    margin-right: 10px;
+}
+
+.back-button, .back-chat {
+    background-color: #9b0000;
+}
+
+.search-form {
+    position: fixed;
+    bottom: 10px;
+    right: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    width: 250px;
+}
+
+.search-form input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+}
+
+.search-form button {
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    padding: 9px 8px;
+    border-radius: 15px;
+    cursor: pointer;
+    margin-left: 2px;
+}
+
+.chat-bar {
+    background-color: #3498db;
+    color: #fff;
+    padding: 2px 15px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.chat-container {
+    margin-top: 60px;
+}
+
+.profile-picture {
+    width: 40px; /* Defina o tamanho desejado para as imagens de perfil */
+    height: 40px; /* Defina a altura desejada para as imagens de perfil */
+    border-radius: 50%; /* Faça as imagens de perfil aparecerem como círculos */
+    margin-right: 10px; /* Adicione um espaçamento à direita das imagens */
+}

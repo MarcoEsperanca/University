@@ -1,0 +1,565 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+.user-interests-perfil-perfil h2,
+.user-subreddits-perfil h2,
+.user-info-perfil h2,
+.user-posts-perfil h2 {
+    font-size: 36px;
+    margin: 0 0 10px 0;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+.subreddit-perfil {
+    background-color: #f0f0f0;
+    margin-bottom: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.subreddit-title-perfil h3 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.subreddit-perfil:hover {
+    background-color: #ad9551;
+}
+
+.subreddit-title-perfil h3 a {
+    color: #B22222;
+    text-decoration: none;
+}
+
+.subreddit-title-perfil h3 a:hover {
+    text-decoration: underline;
+}
+
+.logo-perfil img {
+    width: 50px;
+    height: 50px;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+}
+
+nav ul li {
+    margin-right: 20px;
+}
+
+nav ul li:last-child {
+    margin-right: 0;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+main {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: column-reverse;
+    position: relative;
+}
+
+.user-avatar-perfil {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-top: 20px; /* Adicione um espaçamento inferior para evitar que o botão sobreponha a imagem */
+}
+
+.user-avatar-perfil img {
+    width: 100%;
+    height: 100%;
+}
+
+.user-text-perfil {
+    flex: 1;
+}
+
+.user-info h2 {
+    font-size: 36px;
+    margin: 0 0 10px 0;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+.user-info p {
+    font-size: 18px;
+    color: #555;
+    margin: 0 0 20px 0;
+}
+
+.user-interests-perfil-perfil h2,
+.user-posts-perfil h2 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+}
+
+.post-perfil {
+    background-color: #f0f0f0;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.post-header-perfil h3 {
+    font-size: 28px;
+    margin: 0 0 10px 0;
+}
+
+.post-header-perfil p {
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+}
+
+.comments h4 {
+    font-size: 20px;
+    margin: 20px 0 10px 0;
+}
+
+comments p {
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.nav-item-perfil {
+    margin-right: 20px;
+}
+
+.separator-perfil {
+    color: #fff;
+    font-weight: bold;
+    font-size: 18px;
+    margin: 0 -10 0 10px;
+}
+
+.small-avatar-perfil {
+    max-width: 150px;
+    max-height: auto;
+}
+
+.small-avatar-perfil img {
+    width: 100%;
+    height: auto;
+    border-radius: 50%;
+}
+
+.comments p {
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+}
+
+.change-avatar-button-perfil button {
+    background-color: #B22222;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+
+.change-avatar-button-perfil button:hover {
+    background-color: #005ca9;
+}
+
+.user-friends-perfil h2, .user-following-perfil h2 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+.user-friends-perfil ul, .user-following-perfil ul {
+    list-style: none;
+    padding: 0;
+}
+
+.user-friends-perfil li, .user-following-perfil li {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.user-friends-perfil li a, .user-following-perfil li a {
+    color: #B22222;
+    text-decoration: none;
+    transition: color 0.3s ease; /* Adiciona um efeito de transição suave à cor do link */
+}
+
+.user-friends-perfil li a:hover, .user-following-perfil li a:hover {
+    color: #ad9551; /* Altera a cor do link ao passar o mouse sobre ele */
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.button-left,
+.button-right {
+    text-decoration: none;
+    color: #B22222;
+    margin-right: 10px;
+}
+
+.dot-perfil {
+        height: 8px;
+        width: 8px;
+        background-color: #009688;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+
+.friend-avatar-perfil {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.friends-list-perfil {
+    list-style: none;
+    padding: 0;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.friend-item-perfil {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.editar-perfil-button-perfil {
+    display: inline-block;
+    background-color: #4CAF50; /* Cor de fundo do botão */
+    color: white; /* Cor do texto do botão */
+    padding: 10px 20px; /* Espaçamento interno do botão */
+    text-align: center;
+    text-decoration: none;
+    border-radius: 5px; /* Cantos arredondados do botão */
+    transition: background-color 0.3s ease; /* Efeito de transição de cor de fundo */
+}
+
+.editar-perfil-button-perfil:hover {
+    background-color: #45a049;
+}
+
+.follow-unfollow-buttons-perfil .follow-button-perfil {
+    background-color: #4CAF50; /* Cor verde para o botão de Follow */
+}
+
+.follow-unfollow-buttons-perfil .unfollow-button-perfil {
+    background-color: #B22222; /* Cor vermelha para o botão de Unfollow */
+}
+
+.create-chat-button-perfil {
+    background-color: #005ca9; /* Cor de fundo do botão de Chat */
+}
+
+.follow-unfollow-buttons-perfil a, .create-chat-button-perfil {
+    color: white; /* Cor do texto dos botões */
+    display: inline-block;
+    padding: 10px 20px; /* Espaçamento interno dos botões */
+    text-align: center;
+    text-decoration: none;
+    border-radius: 5px; /* Cantos arredondados dos botões */
+    transition: background-color 0.3s ease; /* Efeito de transição de cor de fundo */
+    margin-right: 10px; /* Espaçamento entre os botões */
+}
+
+.follow-unfollow-buttons-perfil a:hover, .create-chat-button-perfil:hover {
+    filter: brightness(85%); /* Reduz a luminosidade ao passar o mouse sobre os botões */
+}
+
+
+/* editar_perfil.css */
+
+.main-container-editar-perfil {
+    max-width: 400px;
+    margin: 20px auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-group-editar-perfil {
+    margin-bottom: 15px;
+}
+
+label-editar-perfil {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button-editar-perfil {
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button-editar-perfil:hover {
+    background-color: #45a049;
+}
+
+.back-button-editar-perfil {
+    display: block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    text-align: center;
+    &:hover {
+        background-color: #2980b9;
+    }
+    align-items: center;
+}
+
+
+.interests-list-perfil {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.interest-item-perfil {
+    background-color: #9B111E;
+    color: white;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.user-interests-perfil-perfil p {
+    margin-top: 10px;
+    font-style: italic;
+}
+
+/* followers_following.css */
+
+/* Estilos para a lista de seguidores e usuários seguidos */
+.user-list-header-followers_following {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.user-list-header-followers_following h1 {
+    font-size: 36px;
+    margin: 0;
+    color: #333;
+}
+
+.back-button-followers_following a {
+    color: white;
+
+}
+
+.back-button-followers_following a:hover {
+    background-color: #2980b9;
+}
+
+.user-list-followers_following {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.user-item-followers_following {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 30px 30px 0; /* Espaçamento entre os usuários */
+    max-width: 150px; /* Largura máxima para cada usuário */
+}
+
+.user-avatar-followers_following img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.user-details-followers_following h2 {
+    font-size: 18px; /* Um pouco menor para o nome do usuário */
+    margin: 0;
+    color: #333;
+    text-align: center;
+}
+
+.user-details-followers_following p {
+    font-size: 14px; /* Um pouco menor para o email */
+    color: #555;
+    margin: 0;
+    text-align: center;
+}
+
+.no-users-message-followers_following {
+    font-size: 18px;
+    color: #555;
+    margin-top: 30px;
+}
+
+/* Estilos para os botões de voltar e pesquisar */
+.back-button-followers_following a,
+.search-button-followers_following a {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 28px;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 25px;
+    transition: background-color 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+    outline: none;
+}
+
+.back-button-followers_following a:hover,
+.search-button-followers_following a:hover {
+    background-color: #45a049;
+}
+
+/* Estilos para a barra de pesquisa */
+.search-bar-followers_following {
+    width: 300px;
+    height: 40px;
+    padding: 10px;
+    border: 2px solid #4CAF50;
+    border-radius: 25px;
+    font-size: 16px;
+    margin-right: 10px;
+    outline: none;
+}
+
+/* Estilos para a barra de pesquisa em dispositivos móveis */
+@media (max-width: 768px) {
+    .search-bar-followers_following {
+        width: calc(100% - 24px);
+        margin-top: 10px;
+        margin-right: 0;
+    }
+
+    .back-button-followers_following,
+    .search-button-followers_following {
+        margin-top: 10px;
+        width: calc(100% - 24px);
+        text-align: center;
+    }
+}
+
+/* Estilos para a lista de usuários */
+.user-list-followers_following {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.user-item-followers_following {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 30px 30px 0;
+    max-width: 150px;
+}
+
+.user-avatar-followers_following img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.user-details-followers_following h2 {
+    font-size: 18px;
+    margin: 0;
+    color: #333;
+    text-align: center;
+}
+
+.user-details-followers_following p {
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+    text-align: center;
+}
+
+.no-users-message-followers_following {
+    font-size: 18px;
+    color: #555;
+    margin-top: 30px;
+}

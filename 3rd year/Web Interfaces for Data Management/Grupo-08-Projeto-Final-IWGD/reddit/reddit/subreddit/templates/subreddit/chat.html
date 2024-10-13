@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static 'subreddit/css/chat_styles.css' %}">
+</head>
+<body>
+<div class="chat-bar">
+    {% if request.resolver_match.url_name == 'chat_privado' %}
+        <h2>Chat Privado com {{ recipient.username }}</h2>
+    {% elif request.resolver_match.url_name == 'subreddit_chat' %}
+        <h2>Chat {{ subreddit }}</h2>
+    {% endif %}
+    {% if request.resolver_match.url_name == 'chat_privado' %}
+        <img class="profile-picture" src="{{ recipient.reddituser.profile_picture.url }}" alt="{{ recipient.username }}">
+    {% endif %}
+</div>
+    <div class="chat-container">
+        <form method="get" class="search-form">
+            {% csrf_token %}
+             {% if request.resolver_match.url_name == 'subreddit_chat' %}
+                <input type="text" name="q" placeholder="Pesquisar conteúdo">
+                <button type="submit" class="search-button">Pesquisar</button>
+            {% elif request.resolver_match.url_name == 'chat_privado' %}
+                 <input type="text" name="q_privado" placeholder="Pesquisar">
+                <button type="submit" class="search-button">Pesquisar</button>
+            {% endif %}
+        </form>
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}
+                {% if message.sender.username == 'Chat GPT' %}gpt-message{% endif %}">
+                    <div class="message-avatar">
+                        <img src="{{ message.sender.reddituser.profile_picture.url }}" alt="{{ message.sender.username }}">
+                    </div>
+                    <div class="message-content-wrapper">
+                        <div class="message-sender">{{ message.sender.username }}</div>
+                        <div class="message-content">{{ message.content }}</div>
+                        <div class="message-timestamp">{{ message.timestamp|date:"Y-m-d H:i:s" }}</div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        <form method="post" class="message-form">
+            {% csrf_token %}
+            {{ form.content }}
+            <br><br>
+            <div class="extras">
+                <button type="submit" class="send-button">Enviar</button>
+                {% if request.GET.q_privado or request.resolver_match.url_name == 'chat_privado' %}
+                    <a href="{% url 'subreddit:lista_chats_privados' %}" class="back-button">Voltar para a lista de chats</a>
+                {% endif %}
+                {% if request.GET.q_privado and request.resolver_match.url_name == 'chat_privado' %}
+                        <a href="{% url 'subreddit:chat_privado' username=recipient.username %} " class="back-button">Voltar ao Chat</a>
+                {% endif %}
+                {% if request.GET.q or request.resolver_match.url_name == 'subreddit_chat' %}
+                    <a href="{% url 'subreddit:detalhe_subreddit' subreddit_id=subreddit.id %}" class="back-button">Voltar ao subreddit</a>
+                {% endif %}
+                {% if request.GET.q and request.resolver_match.url_name == 'subreddit_chat' %}
+                    <a href="{% url 'subreddit:subreddit_chat' subreddit_id=subreddit.id %}" class="back-button">Voltar ao Chat</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <script src="{% static 'subreddit/js/chat_bottom.js' %}"></script>
+</body>
+</html>

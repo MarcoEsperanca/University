@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="x-icon" href="{% static 'subreddit/img/serit_logo.png' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de {{ user.username }}</title>
+    <link rel="stylesheet" href="{% static 'subreddit/css/perfis.css' %}">
+</head>
+
+<body>
+    <header>
+        <div class="logo-perfil">
+            <h1>Serit.Inc</h1>
+        </div>
+        <nav>
+            <ul>
+                <li class="nav-item-perfil"><a href="{% url 'subreddit:index' %}">Início</a></li>
+                <li class="separator-perfil">|</li>
+                <li class="nav-item-perfil"><a href="{% url 'subreddit:logout' %}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    {% block content %}
+    <main>
+        <section class="user-friends-perfil">
+            <h2 class="button-container">
+                <a class="button-left" href="{% url 'subreddit:list_followers' username=user.username %}">Seguidores ({{ num_seguidores }})</a>
+                <a class="button-right" href="{% url 'subreddit:list_following' username=user.username %}">Seguindo ({{ num_seguindo }})</a>
+            </h2>
+        </section>
+        <section class="user-info-perfil">
+            <div class="user-avatar-perfil small-avatar-perfil">
+                <img src="{{ user.reddituser.profile_picture.url }}" alt="{{ user.username }}">
+            </div>
+            <br><br><br>
+            {% if is_own_profile %}
+                <div class="change-avatar-button-perfil">
+                    <a href="{% url 'subreddit:editar_perfil' %}" class="editar-perfil-button-perfil">Editar Perfil</a>
+                </div>
+            {% else %}
+                <div class="follow-unfollow-buttons-perfil">
+                    {% if request.user.is_authenticated %}
+                        {% if user in request.user.reddituser.following.all %}
+                            <a href="{% url 'subreddit:unfollow_amigo' friend_username=user.username %}" class="unfollow-button-perfil">Unfollow</a>
+                        {% else %}
+                            <a href="{% url 'subreddit:seguir_amigo' friend_username=user.username %}" class="follow-button-perfil">Follow</a>
+                        {% endif %}
+                        <a href="{% url 'subreddit:chat_privado' username=user.username %}" class="create-chat-button-perfil">Chat</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <div class="user-text-perfil">
+                <h2>Perfil de {{ user.username }}</h2>
+                <p>Email: {{ user.email }}</p>
+                <p>País: {{ user.reddituser.country }}</p>
+                <p>Género: {{ user.reddituser.get_gender_display }}</p>
+            </div>
+        </section>
+
+
+        <section class="user-interests-perfil-perfil">
+            <h2>Seus Interesses</h2>
+            <div class="interests-list-perfil">
+                {% for interest in user.reddituser.get_interests_display %}
+                    <div class="interest-item-perfil">
+                        {{ interest }}
+                    </div>
+                {% empty %}
+                    <p>Este utilizador não possui nenhum interesse!</p>
+                {% endfor %}
+            </div>
+        </section>
+
+
+        <section class="user-subreddits-perfil">
+            <br>
+            <h2>Seus Subreddits</h2>
+            {% if user_subreddits %}
+                {% for subreddit in user_subreddits %}
+                    <div class="subreddit-perfil">
+                        <div class="subreddit-title-perfil">
+                            <h3><a href="{% url 'subreddit:detalhe_subreddit' subreddit_id=subreddit.id %}">{{ subreddit.name }}</a></h3>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>Ainda não criou nenhum subreddit.</p>
+                {% endfor %}
+            {% else %}
+                <p>Ainda não criou nenhum subreddit.</p>
+            {% endif %}
+        </section>
+
+        <section class="user-posts-perfil">
+            <h2>Seus Posts</h2>
+            {% if user_posts %}
+                {% for post in user_posts %}
+                    <div class="post-perfil">
+                        <div class="post-header-perfil">
+                            <p><a href="{% url 'subreddit:detalhe_subreddit' subreddit_id=post.subreddit.id %}">{{ post.subreddit.name }}</a></p>
+                            <h3><a href="{% url 'subreddit:detalhe_post' subreddit_id=post.subreddit.id post_id=post.id %}">{{ post.title }}</a></h3>
+                            <p>Criado em: {{ post.pub_data }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>Você ainda não fez nenhum post.</p>
+            {% endif %}
+        </section>
+
+
+
+    </main>
+    {% endblock %}
+</body>
+</html>

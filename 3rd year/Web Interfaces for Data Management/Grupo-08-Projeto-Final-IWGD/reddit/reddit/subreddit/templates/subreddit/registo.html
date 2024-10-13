@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="x-icon" href="{% static 'subreddit/img/serit_logo.png' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro</title>
+    <link rel="stylesheet" href="{% static 'subreddit/css/sign.css' %}">
+
+    <!-- Add references to the necessary CSS and JavaScript libraries for the country picker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="//cdn.tutorialjinni.com/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdn.tutorialjinni.com/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="//g.tutorialjinni.com/mojoaxel/bootstrap-select-country/dist/css/bootstrap-select-country.min.css" />
+</head>
+<body>
+<div class="container">
+    <div class="logo">
+        <img src="{% static 'subreddit/img/serit_logo-cutout.png' %}" alt="Serit Logo">
+    </div>
+    <div class="container">
+        <div class="sign-form">
+            <h2>Registe-se</h2>
+            {% if error_message %}
+                <br/>
+                <p class="error-message">{{ error_message }}</p>
+            {% else %}
+                <br/>
+            {% endif %}
+            <form action="{% url 'subreddit:registo' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Nome de user:</label>
+                    <input type="text" name="username" placeholder="username" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="gender">Género:</label>
+                    <select class="selectpicker" id="gender" name="gender">
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                        <option value="O">Outro</option>
+                        <option value="N">Prefiro não dizer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="interests">Interesses:</label>
+                    <select class="selectpicker" id="interests" name="interests" multiple>
+                        <option value="AN">⛩ Anime</option>
+                        <option value="CINE">📽️ Cinema</option>
+                        <option value="DES">⚽ Desporto</option>
+                        <option value="EDU">📖 Educação</option>
+                        <option value="IT">🖥️ IT</option>
+                        <option value="JOG">🎮 Jogos</option>
+                        <option value="VIG">🗺️ Viagens</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="email">Endereço de email:</label>
+                    <input type="email" name="email" placeholder="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" name="password" placeholder="password" id="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="country">Nacionalidade:</label>
+                    <select class="selectpicker countrypicker" data-flag="true" data-default="PT" id="country" name="country"></select>
+                </div>
+                <div class="from-group-registo">
+                    <label for="profile_picture">Imagem de perfil</label>
+                    <input type="file" name="profile_picture" id="profile_picture">
+                </div>
+                <button type="submit" class="btn-registo">Registar</button>
+            </form>
+            <div class="login-registo">
+                Já possui uma conta? <a href="{% url 'subreddit:login' %}">Faça login aqui</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script src="//cdn.tutorialjinni.com/jquery/3.6.1/jquery.min.js"></script>
+<script src="//cdn.tutorialjinni.com/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="//cdn.tutorialjinni.com/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
+<script src="//g.tutorialjinni.com/mojoaxel/bootstrap-select-country/dist/js/bootstrap-select-country.min.js"></script>
+</html>
+

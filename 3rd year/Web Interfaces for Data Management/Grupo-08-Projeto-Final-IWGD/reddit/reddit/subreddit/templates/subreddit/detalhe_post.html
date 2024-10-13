@@ -1,0 +1,147 @@
+{% extends 'subreddit/index.html' %}
+{% load static %}
+{% block page-title %} {{post.name}} {% endblock %}
+{% block content %}
+    <div class="container-detalhe">
+        <nav class="navbar-detalhe-post">
+            <a href="{% url 'subreddit:detalhe_subreddit' subreddit_id=subreddit.id %}" class="nav-link-detalhe-post">Voltar</a>
+        </nav>
+        <br>
+
+        <div class="post-detalhe-post">
+            <h2 class="post-title-detalhe-post">{{ post.title }}</h2><br>
+            {% if post.image %}
+              <img src="{{ post.image.url }}" alt="Imagem do Post" class="img-post">
+            {% endif %}
+            <p class="post-content-detalhe-post">{{ post.content }}</p>
+
+            <br><br>
+            <a href="javascript:void(0);" class="btn-comment-reddit-detalhe" onclick="toggleCommentBox(this)">Comentar</a>
+            <div class="comment-box-detalhe">
+                <form action="{% url 'subreddit:criar_comentario' subreddit_id=post.subreddit.id post_id=post.id %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <br>
+                    <textarea name="content" id="content" rows="3" placeholder="Escreva o seu comentário..." required></textarea>
+                    <br>
+                    <label for="image">Imagem:</label>
+                    <input type="file" name="image" accept="image/*">
+                    <button type="submit" class="btn-comment-reddit">Enviar Comentário</button>
+                </form>
+            </div>
+            <div class="vote-buttons-detalhe-post">
+                        <form method="POST" action="{% url 'subreddit:vote_post' subreddit_id=post.subreddit.id post_id=post.id %}">
+                            {% csrf_token %}
+                            <button type="submit" name="vote_type" value="like" class="vote-button-detalhe like-button-detalhe" onclick="this.classList.add('jump-animation'); setTimeout(() => this.classList.remove('jump-animation'), 500)">
+                                <img src="{% static 'subreddit/img/like.png' %}" alt="Like">
+                            </button>
+                            <span class="Nlikes-detalhe">{{ post.likes }}</span>
+                            <span class="span-black">|</span> <!-- Barra vertical para separar os ícones -->
+                            <button type="submit" name="vote_type" value="dislike" class="vote-button-detalhe dislike-button-detalhe" onclick="this.classList.add('sad-animation'); setTimeout(() => this.classList.remove('sad-animation'), 500)">
+                                <img src="{% static 'subreddit/img/dislike.png' %}" alt="Dislike">
+                            </button>
+                            <span class="Ndislikes-detalhe">{{ post.dislikes }}</span>
+                        </form>
+                        <div class="post-meta-detalhe">
+                            <span class="text-muted-detalhe-subreddit">Autor: </span><span class="author-detalhe-subreddit"><a href="{% url 'subreddit:perfil' username=post.author.username %}" class="link-discreto-detalhe-subreddit">{{ post.author }}</a></span>
+                            {% if post.author.reddituser.profile_picture %}
+                                    <img src="{{ post.author.reddituser.profile_picture.url }}" alt="Foto do utilizador" class ="foto-user-detalhe">
+                            {% endif %}
+                            <br>
+                            <span class="timestamp-detalhe-subreddit">Publicado em: {{ post.pub_data|date:"d/m/Y H:i:s" }}</span>
+                        </div>
+            </div>
+            {% if request.user.is_authenticated and post.author == request.user %}
+                <form method="POST" action="{% url 'subreddit:edit_post' subreddit_id=post.subreddit.id post_id=post.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="edit-post-button-detalhe-post">Editar Post</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="comments-detalhe-post">
+            <h3 class="comments-title-detalhe-post">Comentários</h3>
+
+            <form method="get" action="{% url 'subreddit:filtrar_comentario' subreddit_id=subreddit.id post_id=post.id %}">
+                {% csrf_token %}
+                <label for="sort_by">Ordenar por:</label>
+                <select id="sort_by" name="sort_by">
+                    <option value="recent">Mais recentes</option>
+                    <option value="popular">Mais populares</option>
+                </select>
+                <button id="ordenar-button" type="submit">Ordenar</button>
+            </form>
+
+            {% for comment in comments %}
+            <div class="comment-detalhe-post" id="comment-{{ comment.id }}">
+
+                 <li class="comment-detalhe-post {% if comment.author.username == 'Chat GPT' %}gpt-comment-detalhe-post{% endif %}">
+                     <p class="comment-content-detalhe-post">{{ comment.content }}</p>
+                     {% if comment.image %}
+                        <img src="{{ comment.image.url }}" alt="Imagem do Post" class="img-comment">
+                     {% endif %}
+                     <div class="post-meta-detalhe">
+                         {% if post.author.reddituser.profile_picture %}
+                            <img src="{{ comment.author.reddituser.profile_picture.url }}" alt="Foto do utilizador" class ="foto-user-detalhe">
+                         {% endif %}
+                        <span class="author-detalhe-post">Autor:</span><a href="{% url 'subreddit:perfil' username=comment.author.username %}" class="link-discreto-detalhe-subreddit">{{ comment.author }}</a><br>
+
+                        <span class="timestamp-detalhe-post">Publicado em: {{ comment.pub_data_comentario|date:"d/m/Y H:i:s" }}</span>
+                    </div>
+                </li>
+                <div class="vote-buttons-detalhe-post">
+                        <form method="POST" action="{% url 'subreddit:vote_comment' subreddit_id=post.subreddit.id post_id=post.id comment_id=comment.id %}">
+                            {% csrf_token %}
+                            <button type="submit" name="vote_type" value="like" class="vote-button-detalhe like-button-detalhe" onclick="this.classList.add('jump-animation'); setTimeout(() => this.classList.remove('jump-animation'), 500)">
+                                <img src="{% static 'subreddit/img/like.png' %}" alt="Like">
+                            </button>
+                            <span class="Nlikes-detalhe">{{ comment.likes }}</span>
+                            <span class="span-black">|</span> <!-- Barra vertical para separar os ícones -->
+                            <button type="submit" name="vote_type" value="dislike" class="vote-button-detalhe dislike-button-detalhe" onclick="this.classList.add('sad-animation'); setTimeout(() => this.classList.remove('sad-animation'), 500)">
+                               <img src="{% static 'subreddit/img/dislike.png' %}" alt="Dislike">
+                            </button>
+                            <span class="Ndislikes-detalhe">{{ comment.dislikes }}</span>
+                        </form>
+                </div>
+
+                {% if request.user.is_superuser or request.user.id == comment.author.id %}
+                <form method="POST" action="{% url 'subreddit:delete_comment' subreddit_id=post.subreddit.id post_id=post.id comment_id=comment.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="delete-comment-button-detalhe-post">Apagar</button>
+                </form>
+                {% endif %}
+                {% if request.user.is_authenticated and comment.author == request.user %}
+                    <form method="POST" action="{% url 'subreddit:edit_comment' subreddit_id=post.subreddit.id post_id=post.id comment_id=comment.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="edit-comment-button-detalhe-post">Editar Comentário</button>
+                    </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+
+            {% if comments|length == 0 %}
+            <p class="no-comments-detalhe-post">Ainda não há comentários para este post.</p>
+            {% endif %}
+            <div class="pagination">
+                <span class="step-links">
+                    {% if comments.has_previous %}
+                        <a href="?page=1">&laquo; primeira</a>
+                        <a href="?page={{ comments.previous_page_number }}">anterior</a>
+                    {% endif %}
+
+                    <span class="current-page">
+                        Página {{ comments.number }} de {{ comments.paginator.num_pages }}
+                    </span>
+
+                    {% if comments.has_next %}
+                        <a href="?page={{ comments.next_page_number }}">seguinte</a>
+                        <a href="?page={{ comments.paginator.num_pages }}">última &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'subreddit/js/comment_button.js' %}"></script>
+{% endblock %}
+

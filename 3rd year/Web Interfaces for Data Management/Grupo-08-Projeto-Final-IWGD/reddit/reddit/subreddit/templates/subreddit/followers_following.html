@@ -1,0 +1,49 @@
+{% extends 'subreddit/perfil.html' %}
+{% load static %}
+
+{% block page-title %} {{ title }} {% endblock %}
+
+{% block content %}
+<main>
+    <div class="user-list-header-followers_following">
+        <button class="back-button-followers_following" onclick="history.back();">Voltar</button>
+        <h1>{{ title }}</h1>
+
+        {% if request.resolver_match.url_name == 'list_followers' %}
+            <form method="get" action="{% url 'subreddit:list_followers' username=user.username %}">
+                <input type="text" name="search_query_followers" placeholder="Pesquisar seguidores">
+                <button type="submit">Pesquisar</button>
+            </form>
+            {% if request.GET.search_query_followers %}
+                <button class="back-button-followers_following"><a href="{% url 'subreddit:list_followers' username=user.username %}">Voltar aos seguidores</a> <br><br>
+            {% endif %}
+        {% endif %}
+
+        {% if request.resolver_match.url_name == 'list_following' %}
+            <form method="get" action="{% url 'subreddit:list_following' username=user.username %}">
+                <input type="text" name="search_query_following" placeholder="Pesquisar seguidores">
+                <button type="submit">Pesquisar</button>
+            </form>
+            {% if request.GET.search_query_following %}
+                    <button class="back-button-followers_following"><a href="{% url 'subreddit:list_following' username=user.username %}">Voltar às pessoas que sigo</a>
+            {% endif %}
+        {% endif %}
+
+    </div>
+    <ul class="user-list-followers_following">
+        {% for user in users %}
+            <li class="user-item-followers_following">
+                <div class="user-details-followers_following">
+                    <div class="user-avatar-followers_following">
+                        <img src="{{ user.reddituser.profile_picture.url }}" alt="{{ user.username }}">
+                    </div>
+                    <h2><a href="{% url 'subreddit:perfil' username=user.username %}">{{ user.username }}</a></h2>
+                    <p>Email: {{ user.email }}</p>
+                </div>
+            </li>
+        {% empty %}
+            <p class="no-users-message-followers_following">Nenhum usuário para exibir.</p>
+        {% endfor %}
+    </ul>
+</main>
+{% endblock %}

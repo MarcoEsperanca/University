@@ -1,0 +1,33 @@
+IWGD - Grupo 8 23/24
+
+####################
+ SERIT.INC
+####################
+
+Superuser criado:
+
+username: jorge_louca
+password: jorge_louca
+
+
+Users criados:
+
+username: diogo_freitas
+password: diogo_freitas
+---
+username: joao_botas
+password: joao_botas
+---
+username: marco_esperanca
+password: marco_esperanca
+
+
+# Pode ser criado qualquer outro utilizador para testes :)
+
+############################
+SE FOR CRIADO UM NOVO venv:
+
+INSTALAR -> pip install django
+	    pip install django-allauth
+
+Outras bibliotecas utilizadas são instaladas automaticamente nos settings.py.

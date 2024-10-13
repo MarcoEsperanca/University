@@ -1,0 +1,12 @@
+{% extends 'subreddit/index.html' %}
+
+{% block content %}
+  <h2 class="center-text">Editar Post</h2>
+  <form method="post" enctype="multipart/form-data" class="edit-post-form">
+    {% csrf_token %}
+    {{ form }}<br>
+    <button type="submit" class="save-button">Guardar</button><br>
+    <a href="{% url 'subreddit:detalhe_post' subreddit_id=post.subreddit.id post_id=post.id %}" class="cancel-link">Cancelar</a>
+  </form> <br>
+
+{% endblock %}

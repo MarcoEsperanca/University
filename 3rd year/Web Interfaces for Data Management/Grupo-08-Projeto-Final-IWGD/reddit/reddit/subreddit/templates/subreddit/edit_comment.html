@@ -1,0 +1,10 @@
+{% extends 'subreddit/index.html' %}
+
+{% block content %}
+  <h2 class="center-text">Editar Comentário</h2>
+  <form method="post" enctype="multipart/form-data" class="edit-post-form">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit" class="save-button">Guardar</button>
+  </form>
+{% endblock %}

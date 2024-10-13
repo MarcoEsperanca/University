@@ -1,0 +1,115 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #ccc;
+    color: #ad9551;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo img {
+    width: 110px;
+    height: auto;
+    text-align: center;
+}
+
+.error-message {
+    color: red;
+    font-weight: bold;
+}
+
+.sign-form {
+    background-color: #f5f5f5;
+    border: 1px solid #000;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(1, 1, 1, 0.5);
+}
+
+.sign-form h2 {
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.btn-registo {
+    display: inline-block;
+    width: 100%;
+    padding: 10px;
+    background-color: #cc0000;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn-registo:hover {
+    background-color: #006400;
+    color: #000;
+}
+
+.login-registo {
+    text-align: center;
+    margin-top: 7px;
+}
+
+
+/* login.css */
+
+label {
+    display: block;
+    font-weight: bold;
+}
+
+.btn-login, .btn-login-google {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #cc0000;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-login:hover, .btn-login-google:hover {
+    background-color: #006400;
+    color: #000;
+}
+
+.captcha-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80px;
+}
+

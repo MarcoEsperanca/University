@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="x-icon" href="{% static 'subreddit/img/serit_logo.png' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subreddits</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'subreddit/css/base_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'subreddit/css/chat_styles.css' %}">
+</head>
+
+<body>
+    <header>
+        <div class="header-container-index">
+            <div class="site-logo">
+                <img src="{% static 'subreddit/img/serit_logo.png' %}" alt="Símbolo do Site" class="site-symbol">
+                <a  class="serit-inc" href="{% url 'subreddit:index' %}"><h1> Serit.Inc </h1></a>
+                <a href="{% url 'subreddit:about_me' %}" class="about-index">Sobre o site</a>
+            </div>
+            <div class="user-info-index">
+                {% if user.is_authenticated %}
+                <div class="user-actions-index">
+                    <div class="icon-index">
+                        <i class="fas-index fa-circle-index"></i>
+                    </div>
+                    <p class="user-greeting-index">Bem-vindo, <strong>{{ user.username }}</strong>!</p>
+                    <div class="user-avatar-index small-avatar-index">
+                        <img src="{{ user.reddituser.profile_picture.url }}" alt="{{ user.username }}">
+                    </div>
+                </div>
+                <div class="perout-index">
+                    <a href="{% url 'subreddit:perfil' %}" class="perfil-index">Perfil</a>
+                    <a href="{% url 'subreddit:lista_chats_privados' %}" class="list-chats-link-index">Meus Chats</a>
+                    <a href="{% url 'subreddit:logout' %}" class="logout-index">Logout</a>
+                </div>
+                {% else %}
+                <div class="reglog-index">
+                    <a href="{% url 'subreddit:login' %}" class="link-discreto-index">Login</a>
+                    <span> | </span>
+                    <a href="{% url 'subreddit:registo' %}" class="link-discreto-index">Registar</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    {% block content %}
+    <div class="subreddit-list-index">
+        <div class="filter-by-category">
+            <form method="get" action="{% url 'subreddit:index' %}">
+                <select name="category_filter" id="category_filter" class="filter-select">
+                    <option value="">Todas as Categorias</option>
+                    {% for category in interest_categories %}
+                        <option value="{{ category.id }}" {% if category.id == selected_category_id %}selected{% endif %}>{{ category.get_category_display }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="filter-button">Filtrar</button>
+            </form>
+        </div>
+
+        <div class="search-container-index">
+            <div class="search-bar-index">
+                <form method="get" action="{% url 'subreddit:index' %}">
+                    <input type="text" name="subreddit_search" placeholder="Pesquisar subreddits">
+                    <button type="submit">Pesquisar</button>
+                </form>
+            </div>
+            <div class="user-search-bar-index">
+                <form method="get" action="{% url 'subreddit:index' %}">
+                    <input type="text" name="user_search" placeholder="Pesquisar users">
+                    <button type="submit">Pesquisar Users</button>
+                </form>
+                {% if users %}
+                <ul class="users-index">
+                    {% for user in users %}
+                    <li>
+                        <a href="{% url 'subreddit:perfil' username=user.username %}">{{ user.username }}</a>
+                        {% if request.user.is_authenticated and user != request.user and user not in following_users %}
+                            <a href="{% url 'subreddit:seguir_amigo' friend_username=user.username %}" class="follow-button-index">Seguir</a>
+                        {% elif request.user.is_authenticated and user != request.user and user in following_users %}
+                            <a href="{% url 'subreddit:unfollow_amigo' friend_username=user.username %}" class="unfollow-button-index">Deixar de Seguir</a>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+
+
+        {% if subreddits %}
+        {% for subreddit in subreddits %}
+            <div class="subreddit-index">
+                <a href="{% url 'subreddit:detalhe_subreddit' subreddit_id=subreddit.id %}" class="link-discreto-index">
+                    <h2>{{ subreddit.name }}</h2>
+                    <p>
+                        Criador: <a href="{% url 'subreddit:perfil' username=subreddit.creator %}" class="link-discreto-detalhe-subreddit">{{ subreddit.creator }}</a>
+                        {% if subreddit.creator.reddituser.profile_picture %}
+                        <img src="{{ subreddit.creator.reddituser.profile_picture.url }}" alt="Foto do utilizador" class ="foto-user-detalhe">
+                    {% endif %}
+                    </p>
+                    <p>Categoria: {% if subreddit.category %}{{ subreddit.category.get_category_display }}{% else %}Não possui{% endif %}</p>
+                    <p>{{ subreddit.description }}</p>
+                </a>
+                {% if user == subreddit.creator or user.is_superuser %}
+                <form method="POST" action="{% url 'subreddit:apagar_subreddit' subreddit_id=subreddit.id %}">
+                    {% csrf_token %}
+                    <br><a href="{% url 'subreddit:apagar_subreddit' subreddit_id=subreddit.id %}" class="delete-subreddit-button-index">Apagar Subreddit</a><br><br>
+                </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+        {% if request.GET.subreddit_search %}
+            <a href="{% url 'subreddit:index' %}" class="back-home-index">Voltar à página inicial</a><br><br>
+        {% endif %}
+        {% if user.is_authenticated %}
+            <br><a href="{% url 'subreddit:criar_subreddit' %}" class="create-subreddit-button-index">Criar Subreddit</a><br><br>
+        {% endif %}
+        </div>
+        <div class="pagination">
+            <span class="step-links">
+                {% if subreddits.has_previous %}
+                    <a href="?page=1&subreddit_search={{ search_query }}">&laquo; primeira</a>
+                    <a href="?page={{ subreddits.previous_page_number }}&subreddit_search={{ search_query }}">anterior</a>
+                {% endif %}
+
+                <span class="current-page">
+                    Página {{ subreddits.number }} de {{ subreddits.paginator.num_pages }}
+                </span>
+
+                {% if subreddits.has_next %}
+                    <a href="?page={{ subreddits.next_page_number }}&subreddit_search={{ search_query }}">seguinte</a>
+                    <a href="?page={{ subreddits.paginator.num_pages }}&subreddit_search={{ search_query }}">última &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+        {% else %}
+            <p id="no_subreddits" >Ainda não existem subreddits registados!</p>
+        {% endif %}
+
+    </div>
+{% endblock %}
+    <br>
+
+    <footer>
+        <div class="copyright-bar">
+            <p>&copy; 2023 Serit.Inc. O site mais sério da história. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>

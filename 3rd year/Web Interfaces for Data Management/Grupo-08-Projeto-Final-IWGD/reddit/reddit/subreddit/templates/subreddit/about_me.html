@@ -1,0 +1,49 @@
+{% extends 'subreddit/index.html' %}
+{% load static %}
+{% block page-title %} {Sobre o Site} {% endblock %}
+
+{% block content %}
+<div class="about-site-container">
+    <div class="about-site-header">
+        <h2>꧁_Sobre o Site_꧂</h2>
+    </div>
+    <div class="about-site-content">
+        <p>
+            Este site tem o intuito de criar uma comunidade aberta a qualquer pessoa, QUALQUER MESMO!
+            Junta-te a ela que não te vais arrepender.
+        </p>
+        <p>
+            Para melhorar a experiência dos nossos utilizadores, o site contém várias funcionalidades que servem e adaptam-se
+            aos gostos dos utilizadores. Algumas delas são as seguintes:
+            <ul>
+                <li>Criar subreddits sobre tópicos relevantes</li>
+                <li>Manifestar categorias de interesse em determinados subreddits</li>
+                <li>Poder fazer posts sobre os tópicos dos subreddits ou conversar via chat de um modo mais "informal"</li>
+                <li>Sistema de followers. Ou seja, poder seguir os utilizadores que nos interessem</li>
+                <li>Dar likes e dislikes em posts e comentários para deixar por mais relevantes</li>
+                <li>Poder falar com outras pessoas via chat privado</li>
+                <li>Definir os interesses de um utilizador, de forma a procurar outras pessoas com interesses semelhantes</li>
+            </ul>
+        E...
+            <ul>
+                <li>Interagir com o Chat GPT, seja num post, num chat de subreddit ou num chat privado com o comando:<br>
+                <code class="gpt-command">!gpt {prompt_desejado}</code>
+                </li>
+            </ul>
+        </p>
+        <p>
+            Para além destas funcionalidades, lembra-te sempre de respeitar a comunidade e as regras de boa conduta no nosso site.
+            Qualquer infração em algum post ou comentário, dará a liberdade a um admin de poder apagar mensagens indesejadas.
+        </p>
+        <p>
+            Faz parte desta comunidade incrível desenvolvida por:
+            <ul>
+                <li>Diogo Freitas</li>
+                <li>João Francisco Botas</li>
+                <li>Marco Esperança</li>
+            </ul>
+        </p>
+    </div>
+    <a class="btn-criar-subreddit" href="{% url 'subreddit:index' %}">Voltar para o Início</a>
+</div>
+{% endblock %}

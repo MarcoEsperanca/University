@@ -1,0 +1,15 @@
+{% extends 'subreddit/perfil.html' %}
+{% load static %}
+{% block page-title %} {Editar perfil} {% endblock %}
+
+{% block content %}
+    <div class="main-container-editar-perfil">
+        <h2 class="page-title-editar-perfil">Editar Perfil</h2>
+        <form method="post" enctype="multipart/form-data" class="edit-profile-form-editar-perfil">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="save-button-editar-perfil">Salvar Alterações</button>
+        </form>
+    </div>
+    <a href="{% url 'subreddit:perfil' username=user.username %}" class="back-button-editar-perfil">Voltar</a>
+{% endblock %}
